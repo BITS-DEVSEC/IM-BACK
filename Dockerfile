@@ -1,69 +1,68 @@
-# syntax=docker/dockerfile:1
-# check=error=true
+# syntax = docker/dockerfile:1
 
-# This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t im_back .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name im_back im_back
-
-# For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
-
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version
+# Match RUBY_VERSION with your .ruby-version and Gemfile
 ARG RUBY_VERSION=3.4.2
-FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+FROM docker.io/library/ruby:${RUBY_VERSION}-slim AS base
 
-# Rails app lives here
-WORKDIR /rails
+# Set working directory
+WORKDIR /opt/app
 
-# Install base packages
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-# Set production environment
-ENV RAILS_ENV="production" \
-    BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development"
-
-# Throw-away build stage to reduce size of final image
+# Throw-away build stage for gem installation
 FROM base AS build
 
-# Install packages needed to build gems
+# Install build dependencies
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libpq-dev pkg-config && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    git \
+    libpq-dev \
+    libvips \
+    pkg-config \
+    libxml2-dev \
+    libxslt1-dev \
+    libyaml-dev
 
-# Install application gems
+# Install gems
 COPY Gemfile Gemfile.lock ./
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    bundle exec bootsnap precompile --gemfile
+RUN bundle install
 
 # Copy application code
 COPY . .
 
-# Precompile bootsnap code for faster boot times
+# Precompile bootsnap for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
-
-
-
-# Final stage for app image
+# Final stage for runtime image
 FROM base
 
-# Copy built artifacts: gems, application
-COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
-COPY --from=build /rails /rails
+# Install runtime dependencies
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    curl \
+    libvips \
+    postgresql-client \
+    libjemalloc2 \
+    libyaml-0-2 && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Run and own only the runtime files as a non-root user for security
-RUN groupadd --system --gid 1000 rails && \
-    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
-USER 1000:1000
+# Copy built artifacts from build stage
+COPY --from=build /usr/local/bundle /usr/local/bundle
+COPY --from=build /opt/app /opt/app
 
-# Entrypoint prepares the database.
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+COPY bin/docker-entrypoint /opt/app/bin/docker-entrypoint
+RUN chmod +x /opt/app/bin/docker-entrypoint
 
-# Start server via Thruster by default, this can be overwritten at runtime
-EXPOSE 80
-CMD ["./bin/thrust", "./bin/rails", "server"]
+# Create and switch to non-root user
+RUN useradd rails --create-home --shell /bin/bash && \
+    chown -R rails:rails db log storage tmp /opt/app/bin/docker-entrypoint
+USER rails:rails
+
+# Entrypoint to handle database setup (if you have one)
+ENTRYPOINT ["/opt/app/bin/docker-entrypoint"]
+
+# Now create and switch to the non-root user
+
+
+# Expose port and start server
+EXPOSE 3000
+CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
