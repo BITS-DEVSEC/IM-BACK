@@ -28,4 +28,30 @@
 #       enabled: "ON"
 
 en:
-  hello: "Hello world"
+  auth:
+    success:
+      password_changed: "Password changed successfully. Please login again."
+      logged_out: "Successfully logged out"
+      logged_out_all: "Successfully logged out from all devices"
+      email_verified: "Email verified successfully"
+      verification_email_sent: "Verification email has been sent."
+      otp_sent: "OTP sent to your phone for verification"
+      user_created: "User created successfully. Please verify your email."
+    errors:
+      unauthorized: "Unauthorized"
+      invalid_credentials: "Invalid credentials"
+      invalid_token: "Invalid or expired token"
+      invalid_refresh_token: "Invalid or expired refresh token"
+      invalid_fin: "Invalid FIN number"
+      invalid_otp: "Invalid OTP"
+      invalid_current_password: "Current password is incorrect"
+      password_confirmation_mismatch: "New password confirmation doesn't match new password"
+      email_already_verified: "Email already verified"
+      user_not_found: "User not found"
+      unverified_email: "Please verify your email first"
+      unverified_phone: "Please verify your phone first"
+  errors:
+    validation_failed: "Validation failed"
+    standard_error: "An error occurred"
+    record_not_found: "Record not found"
+    forbidden: "Forbidden"

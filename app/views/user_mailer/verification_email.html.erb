@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+
+      .container {
+        background-color: #ffffff;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #333333;
+        text-align: center;
+      }
+
+      p {
+        color: #555555;
+        line-height: 1.6;
+      }
+
+      .button {
+        background-color: #007bff;
+        color: #ffffff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .button:hover {
+        background-color: #0056b3;
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 12px;
+        color: #888888;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Email Verification</h1>
+
+      <p>Hello</p>
+
+      <p>Thank you for signing up with us! To complete your registration, please verify your email address by clicking the link below:</p>
+
+      <a href="<%= @verification_url %>" class="button">Verify Your Email</a>
+
+      <p>If you did not create an account with us, please ignore this email.</p>
+
+      <footer>
+        <p>&copy; <%= Time.now.year %> Your Company Name. All Rights Reserved.</p>
+      </footer>
+    </div>
+  </body>
+</html>

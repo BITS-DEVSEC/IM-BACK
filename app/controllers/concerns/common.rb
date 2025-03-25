@@ -1,10 +1,15 @@
 module Common
   extend ActiveSupport::Concern
   include Pagination
+  include JsonResponse
 
   included do
     before_action :set_clazz
     before_action :set_object, only: %i[show update]
+    before_action -> { authorize_index!(controller_name) }, only: :index
+    before_action -> { authorize_show!(controller_name) }, only: :show
+    before_action -> { authorize_create!(controller_name) }, only: :create
+    before_action -> { authorize_update!(controller_name) }, only: :update
   end
 
   def index
@@ -22,18 +27,11 @@ module Common
     else
       data = @clazz.all
     end
+
     total = data.count
     data = data.then(&paginate) if params[:page]
-    result = {
-      success: true,
-      data: serialize(data, options)
-    }
-    if params[:page]
-      result[:page] = params[:page]
-      result[:total] = total
-    end
 
-    render json: result
+    json_success(nil, data: data, serializer_options: options)
   end
 
   def show
@@ -52,11 +50,8 @@ module Common
     else
       data = @obj
     end
-    result = {
-      success: true,
-      data: serialize(data, options)
-    }
-    render json: result
+
+    json_success(nil, data: data, serializer_options: options)
   end
 
   def create
@@ -77,16 +72,12 @@ module Common
     end
 
     if obj.save
-      result = {
-        success: true,
-        data: serialize(obj, options)
-      }
-      render json: result, status: :created
+      json_success(nil, data: obj, serializer_options: options, status: :created)
     else
-      render json: { success: false, error: obj.errors.full_messages[0] }, status: 422
+      json_error("errors.validation_failed", errors: obj.errors.full_messages[0], status: :unprocessable_entity)
     end
   rescue StandardError => e
-    render json: { success: false, error: e.message }
+    json_error("errors.standard_error", error: e.message)
   end
 
   def update
@@ -107,23 +98,15 @@ module Common
     end
 
     if obj.update(model_params)
-      result = {
-        success: true,
-        data: serialize(obj, options)
-      }
-      render json: result
+      json_success(nil, data: obj, serializer_options: options)
     else
-      render json: { success: false, error: obj.errors.full_messages[0] }, status: 422
+      json_error("errors.validation_failed", errors: obj.errors.full_messages[0], status: :unprocessable_entity)
     end
   rescue StandardError => e
-    render json: { success: false, error: e.message }
+    json_error("errors.standard_error", error: e.message)
   end
 
   private
-
-  def serialize(data, options = {})
-    ActiveModelSerializers::SerializableResource.new(data, options)
-  end
 
   def set_clazz
     @clazz = controller_name.classify.constantize
