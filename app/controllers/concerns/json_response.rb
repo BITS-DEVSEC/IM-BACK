@@ -2,7 +2,11 @@ module JsonResponse
   extend ActiveSupport::Concern
 
   def serialize(data, options = {})
-    ActiveModelSerializers::SerializableResource.new(data, options)
+    if data.is_a?(Hash)
+      data.transform_values { |value| serialize(value, options) }
+    else
+      ActiveModelSerializers::SerializableResource.new(data, options)
+    end
   end
 
   def json_success(message_key = nil, data: nil, status: :ok, serializer_options: {}, **options)
