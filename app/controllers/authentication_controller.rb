@@ -8,16 +8,16 @@ class AuthenticationController < ApplicationController
     @user.roles << customer_role if customer_role
 
     if @user.save
-      response = mock_fin_api_call(params[:fin])       # Mock FIN API call
+      response = mock_fin_api_call(params[:fin])
 
       if response[:success]
-        render json: { message: "OTP sent to your phone for verification" }, status: :ok
+        json_success("auth.success.otp_sent")
       else
         @user.destroy
-        render json: { error: "Invalid FIN number" }, status: :unprocessable_entity
+        json_error("auth.errors.invalid_fin")
       end
     else
-      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+      json_error("errors.validation_failed", errors: @user.errors.full_messages)
     end
   end
 
@@ -33,9 +33,9 @@ class AuthenticationController < ApplicationController
 
       UserMailer.verification_email(@user, token).deliver_later
 
-      render json: { message: "User created successfully. Please verify your email." }, status: :created
+      json_success("auth.success.user_created")
     else
-      render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
+      json_error("errors.validation_failed", errors: @user.errors.full_messages)
     end
   end
 
@@ -55,33 +55,31 @@ class AuthenticationController < ApplicationController
         access_token = @user.generate_access_token
         refresh_token = RefreshToken.generate(@user, request)
 
-        render json: {
+        json_success(nil, data: {
           access_token: access_token,
           refresh_token: refresh_token.refresh_token,
           refresh_token_expires_at: refresh_token.expires_at,
-          user: { id: @user.id, roles: @user.roles.pluck(:name) }
-        }, status: :ok
+          user: @user  # Remove serialize() since json_success will handle it
+        })
       else
-        render json: { error: "Failed to retrieve user info from National ID" }, status: :unprocessable_entity
+        json_error("auth.errors.invalid_fin")
       end
     else
-      render json: { error: "Invalid OTP" }, status: :unauthorized
+      json_error("auth.errors.invalid_otp")
     end
   end
 
   def verify_email
-    token_type = params[:token_type].present? ? VerificationToken.token_types[params[:token_type].to_sym] : VerificationToken.token_types[:email]
-
-    token = VerificationToken.find_by(token: params[:token], token_type: token_type)
+    token = VerificationToken.find_by(token: params[:token])
 
     if token && !token.expired?
       user = token.user
       user.update(verified: true)
       token.destroy
 
-      render json: { message: "Email verified successfully" }, status: :ok
+      json_success("auth.success.email_verified")
     else
-      render json: { error: "Invalid or expired token" }, status: :unprocessable_entity
+      json_error("auth.errors.invalid_token")
     end
   end
 
@@ -100,7 +98,7 @@ class AuthenticationController < ApplicationController
               access_token: access_token,
               refresh_token: refresh_token.refresh_token,
               refresh_token_expires_at: refresh_token.expires_at,
-              user: { id: @user.id, roles: @user.roles.pluck(:name) }
+              user: @user
             })
           else
             json_error("auth.errors.unverified_phone")
@@ -124,7 +122,7 @@ class AuthenticationController < ApplicationController
             access_token: access_token,
             refresh_token: refresh_token.refresh_token,
             refresh_token_expires_at: refresh_token.expires_at,
-            user: { id: @user.id, roles: @user.roles.pluck(:name) }
+            user: serialize(@user)
           })
         else
           json_error("auth.errors.unverified_email", status: :unauthorized)
@@ -140,19 +138,17 @@ class AuthenticationController < ApplicationController
 
     if token_record && !token_record.expired?
       @user = token_record.user
-
       access_token = @user.generate_access_token
-
       new_refresh_token = RefreshToken.generate(@user, request)
-      token_record.old_token.destroy
+      token_record.destroy
 
-      render json: {
+      json_success(nil, data: {
         access_token: access_token,
         refresh_token: new_refresh_token.refresh_token,
         refresh_token_expires_at: new_refresh_token.expires_at
-      }, status: :ok
+      })
     else
-      render json: { error: "Invalid or expired refresh token" }, status: :unauthorized
+      json_error("auth.errors.invalid_refresh_token", status: :unauthorized)
     end
   end
 
@@ -178,7 +174,7 @@ class AuthenticationController < ApplicationController
 
     if @user
       if @user.verified?
-        render json: { error: "Email already verified" }, status: :unprocessable_entity
+        json_error("auth.errors.email_already_verified")
       else
         token = VerificationToken.find_by(user_id: @user.id, token_type: :email)
 
@@ -189,10 +185,10 @@ class AuthenticationController < ApplicationController
 
         UserMailer.verification_email(@user, token).deliver_later
 
-        render json: { message: "verification email has been sent." }, status: :ok
+        json_success("auth.success.verification_email_sent")
       end
     else
-      render json: { error: "User not found." }, status: :not_found
+      json_error("auth.errors.user_not_found", status: :not_found)
     end
   end
 
@@ -206,9 +202,9 @@ class AuthenticationController < ApplicationController
       else
         UserMailer.password_reset_email(@user, token).deliver_later
       end
-      render json: { message: "Password reset instructions have been sent to your email." }, status: :ok
+      json_success("auth.success.password_reset_sent")
     else
-      render json: { error: "User not found." }, status: :not_found
+      json_error("auth.errors.user_not_found", status: :not_found)
     end
   end
 
@@ -220,35 +216,34 @@ class AuthenticationController < ApplicationController
       if params[:password] == params[:password_confirmation]
         if user.update(password: params[:password], password_confirmation: params[:password_confirmation])
           token.destroy
-          render json: { message: "Password has been reset successfully." }, status: :ok
+          json_success("auth.success.password_reset_success")
         else
-          render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
+          json_error("errors.validation_failed", errors: user.errors.full_messages)
         end
       else
-        render json: { error: "Password confirmation doesn't match password" }, status: :unprocessable_entity
+        json_error("auth.errors.password_confirmation_mismatch")
       end
     else
-      render json: { error: "Invalid or expired token" }, status: :unprocessable_entity
+      json_error("auth.errors.invalid_token")
     end
   end
 
-def change_password
-  if current_user.authenticate(params[:current_password])
-    if params[:new_password] == params[:new_password_confirmation]
-      if current_user.update(password: params[:new_password], password_confirmation: params[:new_password_confirmation])
-        current_user.refresh_tokens.destroy_all
-
+  def change_password
+    if current_user.authenticate(params[:current_password])
+      if params[:new_password] == params[:new_password_confirmation]
+        if current_user.update(password: params[:new_password], password_confirmation: params[:new_password_confirmation])
+          current_user.refresh_tokens.destroy_all
           json_success("auth.success.password_changed")
+        else
+          json_error("errors.validation_failed", errors: current_user.errors.full_messages)
+        end
       else
-          json_error("auth.errors.invalid_credentials", errors: current_user.errors.full_messages)
+        json_error("auth.errors.password_confirmation_mismatch")
       end
     else
-      json_error("auth.errors.password_confirmation_mismatch")
+      json_error("auth.errors.invalid_current_password", status: :unauthorized)
     end
-  else
-    json_error("auth.errors.invalid_current_password", status: :unauthorized)
   end
-end
 
 
   private
@@ -278,7 +273,7 @@ end
     {
       success: true,
       data: {
-        full_name: "John Doe",
+        full_name: "John Doe Smith",
         gender: "male",
         birthdate: "1990-01-01",
         phone_number: "+1234567890",
