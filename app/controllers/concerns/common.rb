@@ -126,7 +126,7 @@ module Common
   end
 
   def set_clazz
-    @clazz = controller_name.classify.constantize
+    @clazz = "Bscf::Core::#{controller_name.classify}".constantize
   end
 
   def set_object
