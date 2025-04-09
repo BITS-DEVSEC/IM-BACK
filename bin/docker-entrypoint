@@ -6,14 +6,14 @@ if [ -z "${LD_PRELOAD+x}" ]; then
     export LD_PRELOAD
 fi
 
-# If running the rails server then create or migrate existing database
+# Wait for PostgreSQL to be ready
 until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME"; do
     echo "Waiting for PostgreSQL to be ready at $DB_HOST:$DB_PORT..."
     sleep 1
 done
 echo "PostgreSQL is ready!"
 
-# Check if the command includes starting the Rails server (flexible detection)
+# Check if the command includes starting the Rails server
 if echo "$@" | grep -Eq "rails s|rails server|rails s -b"; then
     echo "Preparing database..."
     bundle exec rails db:prepare RAILS_ENV=development

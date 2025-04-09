@@ -1,3 +1,11 @@
+# Clear existing data to start fresh
+puts "Cleaning up existing data..."
+RolePermission.destroy_all
+Permission.destroy_all
+Role.destroy_all
+User.destroy_all
+
+puts "Creating roles..."
 roles = [
   { name: 'admin' },
   { name: 'agent' },
@@ -9,20 +17,19 @@ roles.each do |role|
   Role.find_or_create_by!(name: role[:name])
 end
 
-# Create permissions
+puts "Creating permissions..."
 permissions = [
   { name: 'read_policies', resource: 'insurance_policies', action: 'read' },
   { name: 'create_policies', resource: 'insurance_policies', action: 'create' },
   { name: 'update_policies', resource: 'insurance_policies', action: 'update' },
   { name: 'delete_policies', resource: 'insurance_policies', action: 'delete' }
-  # Add more permissions as needed
 ]
 
 permissions.each do |permission|
   Permission.find_or_create_by!(permission)
 end
 
-# Add user management permissions
+puts "Creating user management permissions..."
 user_permissions = [
   { name: 'read_users', resource: 'users', action: 'read' },
   { name: 'create_users', resource: 'users', action: 'create' },
@@ -35,77 +42,64 @@ user_permissions.each do |permission|
   Permission.find_or_create_by!(permission)
 end
 
-# Assign permissions to roles
-admin_role = Role.find_by(name: 'admin')
-agent_role = Role.find_by(name: 'agent')
-customer_role = Role.find_by(name: 'customer')
-manager_role = Role.find_by(name: 'manager')
+puts "Assigning permissions to roles..."
+# Get role references
+admin_role = Role.find_by!(name: 'admin')
+agent_role = Role.find_by!(name: 'agent')
+customer_role = Role.find_by!(name: 'customer')
+manager_role = Role.find_by!(name: 'manager')
 
 # Admin has all permissions
-Permission.all.each do |permission|
+Permission.all.find_each do |permission|
   RolePermission.find_or_create_by!(role: admin_role, permission: permission)
 end
 
 # Agents can read and create policies
-[
-  Permission.find_by(name: 'read_policies'),
-  Permission.find_by(name: 'create_policies')
-].each do |permission|
+Permission.where(name: [ 'read_policies', 'create_policies' ]).find_each do |permission|
   RolePermission.find_or_create_by!(role: agent_role, permission: permission)
 end
 
 # Customers can only read policies
-Permission.find_by(name: 'read_policies').tap do |permission|
+Permission.where(name: 'read_policies').find_each do |permission|
   RolePermission.find_or_create_by!(role: customer_role, permission: permission)
 end
 
 # Managers can read, create and update policies
-[
-  Permission.find_by(name: 'read_policies'),
-  Permission.find_by(name: 'create_policies'),
-  Permission.find_by(name: 'update_policies')
-].each do |permission|
+Permission.where(name: [ 'read_policies', 'create_policies', 'update_policies' ]).find_each do |permission|
   RolePermission.find_or_create_by!(role: manager_role, permission: permission)
 end
 
 # Admin gets all user permissions
-Permission.where(resource: 'users').each do |permission|
+Permission.where(resource: 'users').find_each do |permission|
   RolePermission.find_or_create_by!(role: admin_role, permission: permission)
 end
 
 # Managers can read and update users
-Permission.where(resource: 'users', action: [ 'read', 'update' ]).each do |permission|
+Permission.where(resource: 'users', action: [ 'read', 'update' ]).find_each do |permission|
   RolePermission.find_or_create_by!(role: manager_role, permission: permission)
 end
 
-# Create an admin user
-admin = User.find_or_create_by!(email: 'admin@example.com') do |user|
-  user.password = 'password123'
-  user.password_confirmation = 'password123'
-  user.verified = true
-end
-admin.roles << admin_role unless admin.roles.include?(admin_role)
+puts "Creating default users..."
+# Create default users
+default_users = [
+  { email: 'admin@example.com', role: admin_role },
+  { email: 'manager@example.com', role: manager_role },
+  { email: 'agent@example.com', role: agent_role },
+  { email: 'customer@example.com', role: customer_role }
+]
 
-# Create a manager user
-manager = User.find_or_create_by!(email: 'manager@example.com') do |user|
-  user.password = 'password123'
-  user.password_confirmation = 'password123'
-  user.verified = true
-end
-manager.roles << manager_role unless manager.roles.include?(manager_role)
+default_users.each do |user_data|
+  user = User.find_or_create_by!(email: user_data[:email]) do |u|
+    u.password = 'password123'
+    u.password_confirmation = 'password123'
+    u.verified = true
+  end
 
-# Create an agent user
-agent = User.find_or_create_by!(email: 'agent@example.com') do |user|
-  user.password = 'password123'
-  user.password_confirmation = 'password123'
-  user.verified = true
+  # Safely assign role
+  unless user.roles.include?(user_data[:role])
+    user.roles = [ user_data[:role] ]
+    user.save!
+  end
 end
-agent.roles << agent_role unless agent.roles.include?(agent_role)
 
-# Create a customer user
-customer = User.find_or_create_by!(email: 'customer@example.com') do |user|
-  user.password = 'password123'
-  user.password_confirmation = 'password123'
-  user.verified = true
-end
-customer.roles << customer_role unless customer.roles.include?(customer_role)
+puts "Seed completed successfully!"
