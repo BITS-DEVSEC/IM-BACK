@@ -37,6 +37,8 @@ en:
       verification_email_sent: "Verification email has been sent."
       otp_sent: "OTP sent to your phone for verification"
       user_created: "User created successfully. Please verify your email."
+      password_reset_sent: "Password reset instructions have been sent to your email."
+      password_reset_success: "Password has been reset successfully."
     errors:
       unauthorized: "Unauthorized"
       invalid_credentials: "Invalid credentials"
