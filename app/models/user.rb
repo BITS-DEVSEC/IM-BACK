@@ -10,7 +10,7 @@ class User < ApplicationRecord
   validates :password_digest, presence: true, if: -> { email.present? }
   has_secure_password
 
-  validates :phone_number, uniqueness: true, allow_nil: true
+  validates :phone_number, uniqueness: { case_sensitive: false }, allow_nil: true
   validates :fin, uniqueness: true, allow_nil: true
 
   validate :email_or_phone_present
