@@ -1,5 +1,9 @@
 FactoryBot.define do
   factory :entity_type do
-    name { "MyString" }
+    sequence(:name) { |n| "Entity Type #{n}" }
+
+    trait :vehicle do
+      name { 'Vehicle' }
+    end
   end
 end

@@ -1,6 +1,16 @@
 FactoryBot.define do
   factory :insurance_type do
-    name { "MyString" }
-    description { "MyText" }
+    sequence(:name) { |n| "Insurance Type #{n}" }
+    description { Faker::Lorem.paragraph }
+
+    trait :motor do
+      name { 'Motor' }
+      description { 'Motor vehicle insurance' }
+    end
+
+    trait :health do
+      name { 'Health' }
+      description { 'Health insurance' }
+    end
   end
 end

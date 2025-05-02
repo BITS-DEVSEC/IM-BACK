@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :permission do
-    name { "MyString" }
-    resource { "MyString" }
-    action { "MyString" }
+    sequence(:name) { |n| "permission_#{n}" }
+    sequence(:resource) { |n| "resource_#{n}" }
+    sequence(:action) { |n| "action_#{n}" }
   end
 end
