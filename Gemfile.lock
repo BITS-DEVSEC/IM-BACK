@@ -85,7 +85,7 @@ GEM
     bigdecimal (3.1.9)
     bootsnap (1.18.4)
       msgpack (~> 1.2)
-    brakeman (7.0.0)
+    brakeman (7.0.2)
       racc
     builder (3.3.0)
     case_transform (0.2)
@@ -357,7 +357,7 @@ DEPENDENCIES
   active_model_serializers
   bcrypt (~> 3.1.7)
   bootsnap
-  brakeman
+  brakeman (~> 7.0.2)
   database_cleaner-active_record
   debug
   dotenv-rails
