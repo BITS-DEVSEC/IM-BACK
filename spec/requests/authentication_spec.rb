@@ -17,7 +17,7 @@ RSpec.describe "Authentication", type: :request do
       post "/auth/forgot_password", params: { email: "nonexistent@example.com" }
 
       expect(response).to have_http_status(:not_found)
-      expect(json_response["error"]).to eq("User not found.")
+      expect(json_response["error"]).to eq(I18n.t("auth.errors.user_not_found"))
     end
   end
 

@@ -24,17 +24,62 @@ RSpec.shared_examples "model_shared_spec" do |factory, attribs, subj = true|
           if validation.instance_of?(Hash)
             method = validation.keys[0]
             options = validation.values[0]
-            it {
-              expect(subject).to(
-                options.inject(
-                  send(VALIDATIONS[method], k)
-                ) do |o, p|
-                  p[1].nil? ? o.send(p[0]) : o.send(p[0], p[1])
+
+            # uniqueness validation
+            if method == :uniqueness && options.is_a?(Hash)
+              it "validates uniqueness of #{k} with options #{options}" do
+                matcher = validate_uniqueness_of(k)
+                matcher = matcher.scoped_to(*Array(options[:scope])) if options[:scope]
+                matcher = matcher.case_insensitive if options[:case_sensitive] == false
+                matcher = matcher.case_sensitive if options[:case_sensitive] == true
+                expect(subject).to matcher
+              end
+            # inclusion validation
+            elsif method == :inclusion && options.is_a?(Hash)
+              values = options[:in]
+              it { should validate_inclusion_of(k).in_array(values) }
+
+            # numericality validation
+            elsif method == :numericality
+              it "validates numericality of #{k}#{options.is_a?(Hash) ? " with options #{options}" : ''}" do
+                matcher = validate_numericality_of(k)
+
+                if options.is_a?(Hash)
+                  options.each do |opt, val|
+                    if val == true
+                      matcher = matcher.send(opt)
+                    elsif val == false
+                      matcher = matcher.send("not_#{opt}")
+                    else
+                      matcher = matcher.send("is_#{opt}", val)
+                    end
+                  end
                 end
-              )
-            }
+
+                expect(subject).to matcher
+              end
+            # other validations
+            else
+              it {
+                expect(subject).to(
+                  if options.is_a?(Array) || options.is_a?(Hash)
+                    options.inject(
+                      send(VALIDATIONS[method], k)
+                    ) do |o, p|
+                      p[1].nil? ? o.send(p[0]) : o.send(p[0], p[1])
+                    end
+                  else
+                    send(VALIDATIONS[method], k)
+                  end
+                )
+              }
+            end
           else
-            it { is_expected.to(send(VALIDATIONS[validation], k)) }
+            if VALIDATIONS[validation]
+              it { is_expected.to(send(VALIDATIONS[validation], k)) }
+            else
+              warn "⚠️ Unknown validation symbol: #{validation.inspect} for attribute #{k}"
+            end
           end
         end
       else

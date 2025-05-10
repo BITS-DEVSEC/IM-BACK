@@ -29,6 +29,9 @@ RUN bundle install
 # Copy application code
 COPY . .
 
+# Ensure bin scripts are executable
+RUN chmod +x bin/rubocop bin/brakeman
+
 # Precompile bootsnap for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
@@ -49,19 +52,19 @@ RUN apt-get update -qq && \
 COPY --from=build /usr/local/bundle /usr/local/bundle
 COPY --from=build /opt/app /opt/app
 
+# Ensure bin scripts are executable in final image
+RUN chmod +x /opt/app/bin/rubocop /opt/app/bin/brakeman
+
 COPY bin/docker-entrypoint /opt/app/bin/docker-entrypoint
 RUN chmod +x /opt/app/bin/docker-entrypoint
 
 # Create and switch to non-root user
 RUN useradd rails --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp /opt/app/bin/docker-entrypoint
+    chown -R rails:rails db log storage tmp /opt/app/bin/docker-entrypoint /opt/app/bin/rubocop /opt/app/bin/brakeman
 USER rails:rails
 
-# Entrypoint to handle database setup (if you have one)
+# Entrypoint to handle database setup
 ENTRYPOINT ["/opt/app/bin/docker-entrypoint"]
-
-# Now create and switch to the non-root user
-
 
 # Expose port and start server
 EXPOSE 3000

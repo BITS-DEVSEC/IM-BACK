@@ -3,12 +3,14 @@ class User < ApplicationRecord
   has_one :customer, dependent: :destroy
   has_many :roles, through: :user_roles
   has_many :refresh_tokens, dependent: :destroy
+  has_many :insured_entities
+  has_many :policies
 
   validates :email, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true
   validates :password_digest, presence: true, if: -> { email.present? }
   has_secure_password
 
-  validates :phone_number, uniqueness: true, allow_nil: true
+  validates :phone_number, uniqueness: { case_sensitive: false }, allow_nil: true
   validates :fin, uniqueness: true, allow_nil: true
 
   validate :email_or_phone_present
