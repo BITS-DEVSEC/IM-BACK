@@ -11,13 +11,13 @@ class AuthenticationController < ApplicationController
       response = mock_fin_api_call(params[:fin])
 
       if response[:success]
-        json_success("auth.success.otp_sent")
+        render_success("auth.success.otp_sent")
       else
         @user.destroy
-        json_error("auth.errors.invalid_fin")
+        render_error("auth.errors.invalid_fin")
       end
     else
-      json_error("errors.validation_failed", errors: @user.errors.full_messages)
+      render_error("errors.validation_failed", errors: @user.errors.full_messages)
     end
   end
 
@@ -33,9 +33,9 @@ class AuthenticationController < ApplicationController
 
       UserMailer.verification_email(@user, token).deliver_later
 
-      json_success("auth.success.user_created")
+      render_success("auth.success.user_created")
     else
-      json_error("errors.validation_failed", errors: @user.errors.full_messages)
+      render_error("errors.validation_failed", errors: @user.errors.full_messages)
     end
   end
 
@@ -55,17 +55,17 @@ class AuthenticationController < ApplicationController
         access_token = @user.generate_access_token
         refresh_token = RefreshToken.generate(@user, request)
 
-        json_success(nil, data: {
+        render_success(nil, data: {
           access_token: access_token,
           refresh_token: refresh_token.refresh_token,
           refresh_token_expires_at: refresh_token.expires_at,
-          user: @user  # Remove serialize() since json_success will handle it
+          user: @user
         })
       else
-        json_error("auth.errors.invalid_fin")
+        render_error("auth.errors.invalid_fin")
       end
     else
-      json_error("auth.errors.invalid_otp")
+      render_error("auth.errors.invalid_otp")
     end
   end
 
@@ -77,9 +77,9 @@ class AuthenticationController < ApplicationController
       user.update(verified: true)
       token.destroy
 
-      json_success("auth.success.email_verified")
+      render_success("auth.success.email_verified")
     else
-      json_error("auth.errors.invalid_token")
+      render_error("auth.errors.invalid_token")
     end
   end
 
@@ -94,20 +94,20 @@ class AuthenticationController < ApplicationController
             access_token = @user.generate_access_token
             refresh_token = RefreshToken.generate(@user, request)
 
-            json_success(nil, data: {
+            render_success(nil, data: {
               access_token: access_token,
               refresh_token: refresh_token.refresh_token,
               refresh_token_expires_at: refresh_token.expires_at,
               user: @user
             })
           else
-            json_error("auth.errors.unverified_phone")
+            render_error("auth.errors.unverified_phone")
           end
         else
-          json_error("auth.errors.invalid_credentials", status: :unauthorized)
+          render_error("auth.errors.invalid_credentials", status: :unauthorized)
         end
       else
-        json_error("auth.errors.unauthorized", status: :unauthorized)
+        render_error("auth.errors.unauthorized", status: :unauthorized)
       end
     else
       # Email login
@@ -118,17 +118,17 @@ class AuthenticationController < ApplicationController
           access_token = @user.generate_access_token
           refresh_token = RefreshToken.generate(@user, request)
 
-          json_success(nil, data: {
+          render_success(nil, data: {
             access_token: access_token,
             refresh_token: refresh_token.refresh_token,
             refresh_token_expires_at: refresh_token.expires_at,
             user: serialize(@user)
           })
         else
-          json_error("auth.errors.unverified_email", status: :unauthorized)
+          render_error("auth.errors.unverified_email", status: :unauthorized)
         end
       else
-        json_error("auth.errors.invalid_credentials", status: :unauthorized)
+        render_error("auth.errors.invalid_credentials", status: :unauthorized)
       end
     end
   end
@@ -142,13 +142,13 @@ class AuthenticationController < ApplicationController
       new_refresh_token = RefreshToken.generate(@user, request)
       token_record.destroy
 
-      json_success(nil, data: {
+      render_success(nil, data: {
         access_token: access_token,
         refresh_token: new_refresh_token.refresh_token,
         refresh_token_expires_at: new_refresh_token.expires_at
       })
     else
-      json_error("auth.errors.invalid_refresh_token", status: :unauthorized)
+      render_error("auth.errors.invalid_refresh_token", status: :unauthorized)
     end
   end
 
@@ -158,15 +158,15 @@ class AuthenticationController < ApplicationController
 
     if token
       token.destroy
-      json_success("auth.success.logged_out")
+      render_success("auth.success.logged_out")
     else
-      json_error("auth.errors.invalid_refresh_token")
+      render_error("auth.errors.invalid_refresh_token")
     end
   end
 
   def logout_all
     current_user.refresh_tokens.destroy_all
-    json_success("auth.success.logged_out_all")
+    render_success("auth.success.logged_out_all")
   end
 
   def resend_verification_email
@@ -174,7 +174,7 @@ class AuthenticationController < ApplicationController
 
     if @user
       if @user.verified?
-        json_error("auth.errors.email_already_verified")
+        render_error("auth.errors.email_already_verified")
       else
         token = VerificationToken.find_by(user_id: @user.id, token_type: :email)
 
@@ -185,10 +185,10 @@ class AuthenticationController < ApplicationController
 
         UserMailer.verification_email(@user, token).deliver_later
 
-        json_success("auth.success.verification_email_sent")
+        render_success("auth.success.verification_email_sent")
       end
     else
-      json_error("auth.errors.user_not_found", status: :not_found)
+      render_error("auth.errors.user_not_found", status: :not_found)
     end
   end
 
@@ -202,9 +202,9 @@ class AuthenticationController < ApplicationController
       else
         UserMailer.password_reset_email(@user, token).deliver_later
       end
-      json_success("auth.success.password_reset_sent")
+      render_success("auth.success.password_reset_sent")
     else
-      json_error("auth.errors.user_not_found", status: :not_found)
+      render_error("auth.errors.user_not_found", status: :not_found)
     end
   end
 
@@ -216,15 +216,15 @@ class AuthenticationController < ApplicationController
       if params[:password] == params[:password_confirmation]
         if user.update(password: params[:password], password_confirmation: params[:password_confirmation])
           token.destroy
-          json_success("auth.success.password_reset_success")
+          render_success("auth.success.password_reset_success")
         else
-          json_error("errors.validation_failed", errors: user.errors.full_messages)
+          render_error("errors.validation_failed", errors: user.errors.full_messages)
         end
       else
-        json_error("auth.errors.password_confirmation_mismatch")
+        render_error("auth.errors.password_confirmation_mismatch")
       end
     else
-      json_error("auth.errors.invalid_token")
+      render_error("auth.errors.invalid_token")
     end
   end
 
@@ -233,15 +233,15 @@ class AuthenticationController < ApplicationController
       if params[:new_password] == params[:new_password_confirmation]
         if current_user.update(password: params[:new_password], password_confirmation: params[:new_password_confirmation])
           current_user.refresh_tokens.destroy_all
-          json_success("auth.success.password_changed")
+          render_success("auth.success.password_changed")
         else
-          json_error("errors.validation_failed", errors: current_user.errors.full_messages)
+          render_error("errors.validation_failed", errors: current_user.errors.full_messages)
         end
       else
-        json_error("auth.errors.password_confirmation_mismatch")
+        render_error("auth.errors.password_confirmation_mismatch")
       end
     else
-      json_error("auth.errors.invalid_current_password", status: :unauthorized)
+      render_error("auth.errors.invalid_current_password", status: :unauthorized)
     end
   end
 
