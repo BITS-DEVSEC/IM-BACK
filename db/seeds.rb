@@ -105,7 +105,6 @@ end
 puts "\nSeeding insurance data..."
 
 LiabilityLimit.destroy_all
-PremiumRate.destroy_all
 Policy.destroy_all
 CategoryAttribute.destroy_all
 AttributeMetadata.destroy_all
@@ -172,7 +171,7 @@ policy = Policy.create!(
   start_date: Date.current,
   end_date: Date.current + 1.year,
   premium_amount: 2641.00,
-  status: "Active"
+  status: "active"
 )
 
 puts "Seeding category groups..."
@@ -297,24 +296,6 @@ CategoryAttribute.create!(
   category: truck,
   attribute_definition: load_capacity,
   is_required: true
-)
-
-puts "Seeding premium rates..."
-PremiumRate.create!(
-  insurance_type: motor_insurance,
-  criteria: {
-    categories: {
-      "Vehicle Type" => "Private Vehicle",
-      "Usage Type" => "Private Own Use"
-    },
-    attributes: {
-      "engine_capacity" => { "min" => 0, "max" => 1600 }
-    }
-  },
-  rate_type: "Fixed",
-  rate: 2641,
-  effective_date: Date.current,
-  status: "Active"
 )
 
 puts "Seeding liability limits..."
