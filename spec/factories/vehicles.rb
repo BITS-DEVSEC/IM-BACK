@@ -8,8 +8,22 @@ FactoryBot.define do
     model { [ 'Corolla', 'Civic', 'Focus', '3 Series' ].sample }
     estimated_value { rand(500_000..2_000_000.0).round(2) }
 
-    created_at { Time.now }  # Explicitly set created_at
-    updated_at { Time.now }  # Explicitly set updated_at
+    created_at { Time.now }
+    updated_at { Time.now }
+
+    after(:build) do |vehicle|
+      image_path = Rails.root.join('spec/fixtures/files/sample_image.jpg')
+      file = Rack::Test::UploadedFile.new(image_path, 'image/jpeg')
+
+      vehicle.front_view_photo.attach(file)
+      vehicle.back_view_photo.attach(file)
+      vehicle.left_view_photo.attach(file)
+      vehicle.right_view_photo.attach(file)
+      vehicle.engine_photo.attach(file)
+      vehicle.chassis_number_photo.attach(file)
+      vehicle.libre_photo.attach(file)
+    end
+
 
     trait :toyota do
       make { 'Toyota' }
