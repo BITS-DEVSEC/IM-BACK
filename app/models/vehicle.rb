@@ -10,7 +10,6 @@ class Vehicle < ApplicationRecord
   has_one_attached :engine_photo
   has_one_attached :chassis_number_photo
   has_one_attached :libre_photo
-  has_one_attached :license
 
   validate :validate_photo_attachments
 
