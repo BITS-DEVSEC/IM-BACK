@@ -1,6 +1,29 @@
 require 'rails_helper'
 
 RSpec.describe Vehicle, type: :model do
+  photo_attributes = %i[
+    front_view_photo
+    back_view_photo
+    left_view_photo
+    right_view_photo
+    engine_photo
+    chassis_number_photo
+    libre_photo
+  ]
+
+  photo_validations = [
+    { content_type: {
+        allowed: [ 'image/jpeg', 'image/png' ],
+        message: 'must be a JPEG or PNG'
+      }
+    },
+    { size: {
+        less_than: 5.megabytes,
+        message: 'must be less than 5MB'
+      }
+    }
+  ]
+
   attributes = [
     { plate_number: [ :presence, :uniqueness ] },
     { chassis_number: [ :presence, :uniqueness ] },
@@ -12,8 +35,7 @@ RSpec.describe Vehicle, type: :model do
     { insured_entity: [ :have_one ] },
     { entity_categories: [ :have_many ] },
     { entity_attributes: [ :have_many ] }
-  ]
-
+  ] + photo_attributes.map { |photo| { photo => photo_validations } }
   include_examples "model_shared_spec", :vehicle, attributes
 
   describe 'validations' do
