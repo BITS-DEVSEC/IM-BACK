@@ -6,10 +6,6 @@ module Common
   included do
     before_action :set_clazz
     before_action :set_object, only: %i[show update]
-    before_action -> { authorize_index!(controller_name) }, only: :index
-    before_action -> { authorize_show!(controller_name) }, only: :show
-    before_action -> { authorize_create!(controller_name) }, only: :create
-    before_action -> { authorize_update!(controller_name) }, only: :update
   end
 
   def index
