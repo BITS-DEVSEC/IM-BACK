@@ -12,11 +12,18 @@ module Authentication
     header = request.headers["Authorization"]
     token = header.split(" ").last if header
 
-    decoded = JsonWebToken.decode(token)
-    @current_user = User.find(decoded["user_id"]) if decoded
-
-    render json: { error: "Unauthorized" }, status: :unauthorized unless @current_user
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: "Unauthorized" }, status: :unauthorized
+    begin
+      decoded = JsonWebToken.decode(token)
+      @current_user = User.find(decoded["user_id"]) if decoded
+      render json: { error: "Unauthorized" }, status: :unauthorized unless @current_user
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "Unauthorized" }, status: :unauthorized
+    rescue JWT::DecodeError => e
+      render json: { error: "Unauthorized - Invalid Token" }, status: :unauthorized
+    rescue JWT::ExpiredSignature => e
+      render json: { error: "Unauthorized - Token Expired" }, status: :unauthorized
+    rescue => e
+      render json: { error: "Unauthorized" }, status: :unauthorized
+    end
   end
 end
