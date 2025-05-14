@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_12_070359) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_14_102731) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -246,6 +246,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_070359) do
     t.index ["status"], name: "index_premium_rates_on_status"
   end
 
+  create_table "quotation_requests", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "insurance_type_id", null: false
+    t.bigint "coverage_type_id", null: false
+    t.bigint "vehicle_id", null: false
+    t.string "status", default: "draft", null: false
+    t.jsonb "form_data", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["coverage_type_id"], name: "index_quotation_requests_on_coverage_type_id"
+    t.index ["insurance_type_id"], name: "index_quotation_requests_on_insurance_type_id"
+    t.index ["user_id"], name: "index_quotation_requests_on_user_id"
+    t.index ["vehicle_id"], name: "index_quotation_requests_on_vehicle_id"
+  end
+
   create_table "refresh_tokens", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "refresh_token", null: false
@@ -349,6 +364,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_12_070359) do
   add_foreign_key "policies", "insured_entities"
   add_foreign_key "policies", "users"
   add_foreign_key "premium_rates", "insurance_types"
+  add_foreign_key "quotation_requests", "coverage_types"
+  add_foreign_key "quotation_requests", "insurance_types"
+  add_foreign_key "quotation_requests", "users"
+  add_foreign_key "quotation_requests", "vehicles"
   add_foreign_key "refresh_tokens", "users"
   add_foreign_key "role_permissions", "permissions"
   add_foreign_key "role_permissions", "roles"

@@ -2,6 +2,7 @@ class Vehicle < ApplicationRecord
   has_one :insured_entity, as: :entity
   has_many :entity_categories, as: :entity
   has_many :entity_attributes, as: :entity
+  has_many :quotation_requests
 
   has_one_attached :front_view_photo
   has_one_attached :back_view_photo
