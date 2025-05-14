@@ -21,4 +21,5 @@ Rails.application.routes.draw do
 
   resources :insurance_types
   resources :vehicles
+  resources :quotation_requests
 end
