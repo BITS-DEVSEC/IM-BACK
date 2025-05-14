@@ -20,4 +20,5 @@ Rails.application.routes.draw do
   post "auth/change_password", to: "authentication#change_password"
 
   resources :insurance_types
+  resources :vehicles
 end
