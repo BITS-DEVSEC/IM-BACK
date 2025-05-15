@@ -18,4 +18,8 @@ Rails.application.routes.draw do
   post "/auth/forgot_password", to: "authentication#forgot_password"
   post "/auth/reset_password", to: "authentication#reset_password"
   post "auth/change_password", to: "authentication#change_password"
+
+  resources :insurance_types
+  resources :vehicles
+  resources :quotation_requests
 end

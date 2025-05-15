@@ -2,6 +2,17 @@ class Vehicle < ApplicationRecord
   has_one :insured_entity, as: :entity
   has_many :entity_categories, as: :entity
   has_many :entity_attributes, as: :entity
+  has_many :quotation_requests
+
+  has_one_attached :front_view_photo
+  has_one_attached :back_view_photo
+  has_one_attached :left_view_photo
+  has_one_attached :right_view_photo
+  has_one_attached :engine_photo
+  has_one_attached :chassis_number_photo
+  has_one_attached :libre_photo
+
+  validate :validate_photo_attachments
 
   validates :plate_number, presence: true, uniqueness: true,
             format: { with: /\A[A-Z0-9]{3,10}\z/, message: "has invalid format" }
@@ -44,6 +55,30 @@ class Vehicle < ApplicationRecord
   end
 
   private
+
+  def validate_photo_attachments
+    photos = [
+      front_view_photo,
+      back_view_photo,
+      left_view_photo,
+      right_view_photo,
+      engine_photo,
+      chassis_number_photo,
+      libre_photo
+    ]
+
+    photos.each do |photo|
+      if photo.attached?
+        unless photo.content_type.in?(%w[image/jpeg image/png])
+          errors.add(photo.name, "must be a JPEG or PNG")
+        end
+
+        if photo.byte_size > 5.megabytes
+          errors.add(photo.name, "must be less than 5MB")
+        end
+      end
+    end
+  end
 
   def year_not_in_future
     if year_of_manufacture.present? && year_of_manufacture > Date.current.year

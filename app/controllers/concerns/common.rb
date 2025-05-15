@@ -6,10 +6,6 @@ module Common
   included do
     before_action :set_clazz
     before_action :set_object, only: %i[show update]
-    before_action -> { authorize_index!(controller_name) }, only: :index
-    before_action -> { authorize_show!(controller_name) }, only: :show
-    before_action -> { authorize_create!(controller_name) }, only: :create
-    before_action -> { authorize_update!(controller_name) }, only: :update
   end
 
   def index
@@ -31,7 +27,7 @@ module Common
     total = data.count
     data = data.then(&paginate) if params[:page]
 
-    json_success(nil, data: data, serializer_options: options)
+    render_success(nil, data: data, serializer_options: options)
   end
 
   def show
@@ -51,7 +47,7 @@ module Common
       data = @obj
     end
 
-    json_success(nil, data: data, serializer_options: options)
+    render_success(nil, data: data, serializer_options: options)
   end
 
   def create
@@ -72,12 +68,12 @@ module Common
     end
 
     if obj.save
-      json_success(nil, data: obj, serializer_options: options, status: :created)
+      render_success(nil, data: obj, serializer_options: options, status: :created)
     else
-      json_error("errors.validation_failed", errors: obj.errors.full_messages[0], status: :unprocessable_entity)
+      render_error("errors.validation_failed", errors: obj.errors.full_messages[0], status: :unprocessable_entity)
     end
   rescue StandardError => e
-    json_error("errors.standard_error", error: e.message)
+    render_error("errors.standard_error", error: e.message)
   end
 
   def update
@@ -98,12 +94,12 @@ module Common
     end
 
     if obj.update(model_params)
-      json_success(nil, data: obj, serializer_options: options)
+      render_success(nil, data: obj, serializer_options: options)
     else
-      json_error("errors.validation_failed", errors: obj.errors.full_messages[0], status: :unprocessable_entity)
+      render_error("errors.validation_failed", errors: obj.errors.full_messages[0], status: :unprocessable_entity)
     end
   rescue StandardError => e
-    json_error("errors.standard_error", error: e.message)
+    render_error("errors.standard_error", error: e.message)
   end
 
   private

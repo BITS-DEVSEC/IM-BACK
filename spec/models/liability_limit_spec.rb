@@ -5,15 +5,9 @@ RSpec.describe LiabilityLimit, type: :model do
     { insurance_type: [ :belong_to ] },
     { coverage_type: [ :belong_to ] },
     { benefit_type: [ :presence ] },
-    { min_limit: [
-      :presence,
-      { numericality: { greater_than_or_equal_to: 0 } }
-    ] },
-    { max_limit: [
-      :presence,
-      { numericality: { greater_than_or_equal_to: 0 } }
-    ] }
-  ]
+    { max_limit: [ :presence, { numericality: { greater_than_or_equal_to: 0 } } ] },
+    { min_limit: [ { numericality: { greater_than_or_equal_to: 0 } } ] }
+    ]
 
   include_examples "model_shared_spec", :liability_limit, attributes
 

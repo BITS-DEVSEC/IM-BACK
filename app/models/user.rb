@@ -5,6 +5,7 @@ class User < ApplicationRecord
   has_many :refresh_tokens, dependent: :destroy
   has_many :insured_entities
   has_many :policies
+  has_many :quotaion_requests
 
   validates :email, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true
   validates :password_digest, presence: true, if: -> { email.present? }

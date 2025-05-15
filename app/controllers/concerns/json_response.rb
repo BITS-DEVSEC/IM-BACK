@@ -9,7 +9,7 @@ module JsonResponse
     end
   end
 
-  def json_success(message_key = nil, data: nil, status: :ok, serializer_options: {}, **options)
+  def render_success(message_key = nil, data: nil, status: :ok, serializer_options: {}, **options)
     response = { success: true }
     response[:message] = I18n.t(message_key) if message_key
 
@@ -27,7 +27,7 @@ module JsonResponse
     render json: response, status: status
   end
 
-  def json_error(message_key, status: :unprocessable_entity, errors: nil, **options)
+  def render_error(message_key, status: :unprocessable_entity, errors: nil, **options)
     response = {
       success: false,
       error: I18n.t(message_key)
