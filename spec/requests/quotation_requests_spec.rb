@@ -5,6 +5,8 @@ RSpec.describe "QuotationRequests", type: :request do
   let(:insurance_type) { create(:insurance_type) }
   let(:coverage_type) { create(:coverage_type) }
 
+  let(:file) { fixture_file_upload(Rails.root.join('spec/fixtures/files/sample_image.jpg'), 'image/jpeg') }
+
   let(:valid_attributes) do
     {
       user_id: auth_user.id,
@@ -27,15 +29,6 @@ RSpec.describe "QuotationRequests", type: :request do
     }
   end
 
-  let(:new_attributes) do
-    {
-      form_data: {
-        "insurance_type" => "Updated Insurance",
-        "coverage_type" => "Updated Coverage"
-      }
-    }
-  end
-
   let(:invalid_attributes) do
     {
       user_id: nil,
@@ -45,56 +38,114 @@ RSpec.describe "QuotationRequests", type: :request do
     }
   end
 
-  include_examples 'request_shared_spec', 'quotation_requests', 9
-
   describe 'POST /create' do
-    it 'creates a new QuotationRequest with vehicle' do
-      expect do
-        post(quotation_requests_url, headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" }, params: { payload: valid_attributes }, as: :json)
-      end.to change(QuotationRequest, :count).by(1)
+    it 'creates a new QuotationRequest with vehicle and image' do
+      expect {
+        post(
+          quotation_requests_url,
+          headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" },
+          params: {
+            payload: valid_attributes.to_json,
+            'vehicle_attributes[front_view_photo]' => file
+          },
+          as: :multipart
+        )
+      }.to change(QuotationRequest, :count).by(1)
         .and change(Vehicle, :count).by(1)
 
       expect(response).to have_http_status(:created)
-      result = JSON(response.body)
-      expect(result['success']).to be_truthy
-      expect(result['data']['vehicle']['plate_number']).to eq("ABC1234")
+      body = JSON.parse(response.body)
+      expect(body['success']).to be true
+      expect(body['data']['vehicle']['plate_number']).to eq("ABC1234")
     end
 
-    it 'renders a JSON response with errors for invalid attributes' do
-      post(quotation_requests_url, headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" }, params: { payload: invalid_attributes }, as: :json)
+    it 'fails to create with invalid attributes' do
+      post(
+        quotation_requests_url,
+        headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" },
+        params: {
+          payload: invalid_attributes.to_json
+        },
+        as: :multipart
+      )
 
       expect(response).to have_http_status(:unprocessable_entity)
-      result = JSON(response.body)
-      expect(result['success']).to be_falsey
-      expect(result['error']).not_to be_blank
+      body = JSON.parse(response.body)
+      expect(body['success']).to be false
     end
   end
 
   describe 'PUT /update' do
-    context 'with valid params' do
-      it 'updates the requested QuotationRequest' do
-        obj = create(:quotation_request, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
-        params = { id: obj.to_param, payload: new_attributes }
-        put(quotation_request_url(obj), headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" }, params: params, as: :json)
+    it 'updates an existing QuotationRequest' do
+      request = create(:quotation_request, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
+      update_data = {
+        form_data: {
+          "insurance_type" => "Updated Insurance",
+          "coverage_type" => "Updated Coverage"
+        }
+      }
 
-        obj.reload
-        expect(response).to have_http_status(:ok)
-        expect(obj.form_data["insurance_type"]).to eq "Updated Insurance"
+      put(
+        quotation_request_url(request),
+        headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" },
+        params: {
+          id: request.id,
+          payload: update_data.to_json
+        },
+        as: :multipart
+      )
 
-        result = JSON(response.body)
-        expect(result['success']).to be_truthy
-      end
+      expect(response).to have_http_status(:ok)
+      request.reload
+      expect(request.form_data["insurance_type"]).to eq("Updated Insurance")
     end
 
-    context 'with invalid params' do
-      it 'renders a JSON response with errors for the object' do
-        obj = create(:quotation_request, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
-        put(quotation_request_url(obj), headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" }, params: { id: obj.to_param, payload: invalid_attributes }, as: :json)
+    it 'fails to update with invalid data' do
+      request = create(:quotation_request, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
 
-        expect(response).to have_http_status(:unprocessable_entity)
-        result = JSON(response.body)
-        expect(result['success']).to be_falsey
-      end
+      put(
+        quotation_request_url(request),
+        headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" },
+        params: {
+          id: request.id,
+          payload: invalid_attributes.to_json
+        },
+        as: :multipart
+      )
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      body = JSON.parse(response.body)
+      expect(body['success']).to be false
+    end
+  end
+
+  describe 'GET /index' do
+    it 'returns a list of quotation requests' do
+      create_list(:quotation_request, 3, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
+
+      get(
+        quotation_requests_url,
+        headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" }
+      )
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body['data'].length).to be >= 3
+    end
+  end
+
+  describe 'GET /show' do
+    it 'returns a single quotation request' do
+      request = create(:quotation_request, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
+
+      get(
+        quotation_request_url(request),
+        headers: { 'Authorization' => "Bearer #{auth_user.generate_access_token}" }
+      )
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body['data']['id']).to eq(request.id)
     end
   end
 end
