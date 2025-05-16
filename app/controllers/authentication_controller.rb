@@ -122,7 +122,7 @@ class AuthenticationController < ApplicationController
             access_token: access_token,
             refresh_token: refresh_token.refresh_token,
             refresh_token_expires_at: refresh_token.expires_at,
-            user: serialize(@user)
+            user: @user
           })
         else
           render_error("auth.errors.unverified_email", status: :unauthorized)
