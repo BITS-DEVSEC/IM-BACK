@@ -37,7 +37,6 @@ gem "rack-cors"
 gem "active_model_serializers"
 gem "bcrypt", "~> 3.1.7"
 gem "jwt"
-gem "rails_admin"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -55,4 +54,3 @@ group :development, :test do
   gem "database_cleaner-active_record"
   gem "dotenv-rails"
 end
-gem "sassc-rails"
