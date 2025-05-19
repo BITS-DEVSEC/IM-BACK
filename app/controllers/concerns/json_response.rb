@@ -2,17 +2,10 @@ module JsonResponse
   extend ActiveSupport::Concern
 
   def serialize(data, options = {})
-    return data unless data.respond_to?(:as_json) || data.is_a?(Hash) || data.is_a?(Array)
-
-    case data
-    when Hash
+    if data.is_a?(Hash)
       data.transform_values { |value| serialize(value, options) }
-    when ActiveModelSerializers::SerializableResource
-      data.as_json
-    when ActiveRecord::Base, Array
-      ActiveModelSerializers::SerializableResource.new(data, options).as_json
     else
-      data.as_json
+      ActiveModelSerializers::SerializableResource.new(data, options)
     end
   end
 
