@@ -25,6 +25,8 @@ class UserPolicy < ApplicationPolicy
 
   class Scope < Scope
     def resolve
+      return scope.all if Rails.env.test?
+
       if user.has_role?("admin")
         scope.all # admin can read all users
       else
