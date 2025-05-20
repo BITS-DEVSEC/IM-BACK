@@ -8,6 +8,7 @@ RSpec.describe User, type: :model do
     { refresh_tokens: [ :have_many ] },
     { insured_entities: [ :have_many ] },
     { policies: [ :have_many ] },
+    { quotation_requests: [ :have_many ] },
     { verification_tokens: [ :have_many ] },
     { email: [ { uniqueness: { allow_nil: true } } ] },
     { phone_number: [ { uniqueness: { case_sensitive: false, allow_nil: true } } ] },
