@@ -291,7 +291,7 @@ class AuthenticationController < ApplicationController
       secure: Rails.env.production?,
       expires: refresh_token.expires_at,
       same_site: :lax,
-      path: "/auth/refresh_token"
+      path: "/auth/refresh"
     }
   end
 end
