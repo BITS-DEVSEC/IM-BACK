@@ -54,11 +54,9 @@ class AuthenticationController < ApplicationController
 
         access_token = @user.generate_access_token
         refresh_token = RefreshToken.generate(@user, request)
-
+        set_refresh_token_cookie(refresh_token)
         render_success(nil, data: {
           access_token: access_token,
-          refresh_token: refresh_token.refresh_token,
-          refresh_token_expires_at: refresh_token.expires_at,
           user: @user
         })
       else
