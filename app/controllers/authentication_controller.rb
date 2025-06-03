@@ -54,11 +54,9 @@ class AuthenticationController < ApplicationController
 
         access_token = @user.generate_access_token
         refresh_token = RefreshToken.generate(@user, request)
-
+        set_refresh_token_cookie(refresh_token)
         render_success(nil, data: {
           access_token: access_token,
-          refresh_token: refresh_token.refresh_token,
-          refresh_token_expires_at: refresh_token.expires_at,
           user: @user
         })
       else
@@ -93,11 +91,10 @@ class AuthenticationController < ApplicationController
           if @user.verified?
             access_token = @user.generate_access_token
             refresh_token = RefreshToken.generate(@user, request)
+            set_refresh_token_cookie(refresh_token)
 
             render_success(nil, data: {
               access_token: access_token,
-              refresh_token: refresh_token.refresh_token,
-              refresh_token_expires_at: refresh_token.expires_at,
               user: @user
             })
           else
@@ -117,11 +114,10 @@ class AuthenticationController < ApplicationController
         if @user.verified?
           access_token = @user.generate_access_token
           refresh_token = RefreshToken.generate(@user, request)
+          set_refresh_token_cookie(refresh_token)
 
           render_success(nil, data: {
             access_token: access_token,
-            refresh_token: refresh_token.refresh_token,
-            refresh_token_expires_at: refresh_token.expires_at,
             user: @user
           })
         else
@@ -134,7 +130,8 @@ class AuthenticationController < ApplicationController
   end
 
   def refresh_token
-    token_record = RefreshToken.find_by(refresh_token: params[:refresh_token])
+    token_value = cookies.signed[:refresh_token] || params[:refresh_token]
+    token_record = RefreshToken.find_by(refresh_token: token_value)
 
     if token_record && !token_record.expired?
       @user = token_record.user
@@ -142,22 +139,25 @@ class AuthenticationController < ApplicationController
       new_refresh_token = RefreshToken.generate(@user, request)
       token_record.destroy
 
+      set_refresh_token_cookie(new_refresh_token)
+
       render_success(nil, data: {
-        access_token: access_token,
-        refresh_token: new_refresh_token.refresh_token,
-        refresh_token_expires_at: new_refresh_token.expires_at
+        access_token: access_token
       })
     else
+      cookies.delete(:refresh_token)
       render_error("auth.errors.invalid_refresh_token", status: :unauthorized)
     end
   end
 
   # Logout
   def logout
-    token = RefreshToken.find_by(refresh_token: params[:refresh_token])
+    token_value = cookies.signed[:refresh_token] || params[:refresh_token]
+    token = RefreshToken.find_by(refresh_token: token_value)
 
     if token
       token.destroy
+      cookies.delete(:refresh_token)
       render_success("auth.success.logged_out")
     else
       render_error("auth.errors.invalid_refresh_token")
@@ -279,6 +279,17 @@ class AuthenticationController < ApplicationController
         phone_number: "+1234567890",
         address: "Addis Ababa, Akaki Kality, Woreda 9"
       }
+    }
+  end
+
+  def set_refresh_token_cookie(refresh_token)
+    cookies.signed[:refresh_token] = {
+      value: refresh_token.refresh_token,
+      httponly: true,
+      secure: Rails.env.production?,
+      expires: refresh_token.expires_at,
+      same_site: :lax,
+      path: "/auth/refresh"
     }
   end
 end
