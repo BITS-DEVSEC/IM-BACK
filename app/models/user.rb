@@ -1,6 +1,7 @@
 class User < ApplicationRecord
   has_many :user_roles, dependent: :destroy
   has_one :customer, dependent: :destroy
+  has_one :insurer, dependent: :destroy
   has_many :roles, through: :user_roles
   has_many :refresh_tokens, dependent: :destroy
   has_many :insured_entities
