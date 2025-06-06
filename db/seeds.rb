@@ -20,7 +20,7 @@ InsuranceType.destroy_all
 
 # Roles
 puts "Creating roles..."
-roles = %w[admin agent customer manager]
+roles = %w[admin agent customer manager insurer]
 roles.each { |name| Role.find_or_create_by!(name:) }
 
 # Permissions
@@ -37,7 +37,15 @@ permissions = [
   { name: 'manage_users', resource: 'users', action: 'manage' }
 ]
 
+insurer_permissions = [
+  { name: 'manage_products', resource: 'insurance_products', action: 'manage' },
+  { name: 'view_customers', resource: 'customers', action: 'read' },
+  { name: 'view_policies', resource: 'policies', action: 'read' },
+  { name: 'view_claims', resource: 'claims', action: 'read' }
+]
+
 permissions.each { |perm| Permission.find_or_create_by!(perm) }
+insurer_permissions.each { |perm| Permission.find_or_create_by!(perm) }
 
 # Role Permissions
 puts "Assigning permissions to roles..."
@@ -45,6 +53,7 @@ admin = Role.find_by!(name: 'admin')
 agent = Role.find_by!(name: 'agent')
 customer = Role.find_by!(name: 'customer')
 manager = Role.find_by!(name: 'manager')
+insurer = Role.find_by!(name: 'insurer')
 
 Permission.all.find_each { |p| RolePermission.find_or_create_by!(role: admin, permission: p) }
 
@@ -62,13 +71,18 @@ Permission.where(resource: 'users', action: %w[read update]).each do |p|
   RolePermission.find_or_create_by!(role: manager, permission: p)
 end
 
+insurer_permissions.each do |perm_attrs|
+  permission = Permission.find_by!(name: perm_attrs[:name])
+  RolePermission.find_or_create_by!(role: insurer, permission: permission)
+end
 # Users
 puts "Creating default users..."
 [
   { email: 'admin@example.com', role: admin },
   { email: 'manager@example.com', role: manager },
   { email: 'agent@example.com', role: agent },
-  { email: 'customer@example.com', role: customer }
+  { email: 'customer@example.com', role: customer },
+  { email: 'insurer@example.com', role: insurer }
 ].each do |data|
   user = User.find_or_create_by!(email: data[:email]) do |u|
     u.password = 'password123'
