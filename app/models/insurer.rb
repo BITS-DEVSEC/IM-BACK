@@ -6,6 +6,7 @@ class Insurer < ApplicationRecord
   validates :name, presence: true, uniqueness: true
   validates :contact_email, presence: true, format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :contact_phone, presence: true
+  validate :validate_logo
 
   private
   def validate_logo
