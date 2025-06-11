@@ -30,5 +30,5 @@ RSpec.describe "Users", type: :request do
   end
 
 
-  include_examples "request_shared_spec", "users", 7
+  include_examples "request_shared_spec", "users", 11
 end
