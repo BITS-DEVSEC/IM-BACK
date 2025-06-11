@@ -22,20 +22,35 @@ class AuthenticationController < ApplicationController
   end
 
   def register
-    @user = User.new(user_params)
+    role_name = params[:role]
+    role = Role.find_by(name: role_name)
+
+    if role_name == "insurer"
+      temporary_password = SecureRandom.hex(8)
+      @user = User.new(user_params.merge(
+        password: temporary_password,
+        password_confirmation: temporary_password,
+        verified: true,
+        temporary_password: true
+      ))
+    else
+      @user = User.new(user_params)
+    end
 
     if @user.save
-      role = Role.find_by(name: params[:role] || "agent")
-      @user.roles << role if role
+        @user.roles << role if role
 
-      token = @user.verification_tokens.create(token_type: :email)
-      Rails.logger.info "Verification token: #{token.token}"
+        if role_name == "insurer"
+          UserMailer.welcome_email(@user, temporary_password).deliver_later
+        else
+          token = @user.verification_tokens.create(token_type: :email)
+          Rails.logger.info "Verification token: #{token.token}"
+          UserMailer.verification_email(@user, token).deliver_later
+        end
 
-      UserMailer.verification_email(@user, token).deliver_later
-
-      render_success("auth.success.user_created")
+        render_success("auth.success.user_created")
     else
-      render_error("errors.validation_failed", errors: @user.errors.full_messages)
+        render_error("errors.validation_failed", errors: @user.errors.full_messages)
     end
   end
 
