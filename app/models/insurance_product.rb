@@ -2,7 +2,7 @@ class InsuranceProduct < ApplicationRecord
   belongs_to :insurer
   belongs_to :coverage_type
 
-  validates :name, presence: true
+  validates :name, presence: true, uniqueness: true
   validates :description, presence: true
   validates :customer_rating, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 5 }, allow_nil: true
   validates :estimated_price, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true

@@ -4,7 +4,7 @@ RSpec.describe InsuranceProduct, type: :model do
   attributes = [
     { insurer: [ :belong_to ] },
     { coverage_type: [ :belong_to ] },
-    { name: [ :presence ] },
+    { name: [ :presence, :uniqueness ] },
     { description: [ :presence ] },
     { customer_rating: [ { numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 5 } } ] },
     { estimated_price: [ { numericality: { greater_than_or_equal_to: 0 } } ] },
