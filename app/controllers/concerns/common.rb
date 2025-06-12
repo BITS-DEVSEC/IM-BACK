@@ -35,6 +35,11 @@
         end
       end
 
+      # Apply filters
+      if respond_to?(:filter_fields, true) && params[:filter].present?
+        data = apply_filters(data, filter_fields)
+      end
+
       total = data.count
       data = data.then(&paginate) if params[:page]
 
@@ -125,4 +130,24 @@
 
     # This method should be overridden by respective child controllers
     def model_params; end
+
+    def apply_filters(scope, allowed_fields = [])
+      return scope if params[:filter].blank? || allowed_fields.empty?
+
+      filter_params = params[:filter].to_unsafe_h.slice(*allowed_fields.map(&:to_s))
+
+      filter_params.reduce(scope) do |filtered_scope, (key, value)|
+        next filtered_scope if value.blank?
+
+        if filtered_scope.klass.column_names.include?(key)
+          filtered_scope.where(key => value) # Direct column filtering
+        elsif filtered_scope.klass.respond_to?("by_#{key}")
+          filtered_scope.public_send("by_#{key}", value) # Scope method with by _ prefix
+        elsif filtered_scope.klass.respond_to?(key)
+          filtered_scope.public_send(key, value) # Named scope
+        else
+          filtered_scope
+        end
+      end
+    end
   end
