@@ -7,7 +7,7 @@ class QuotationRequestsController < ApplicationController
       parsed_payload = raw_payload.is_a?(String) ? JSON.parse(raw_payload) : raw_payload
       payload_params = ActionController::Parameters.new(parsed_payload).permit(
         :user_id,
-        :insurance_type_id,
+        :insurance_product_id,
         :coverage_type_id,
         :status,
         form_data: {},
@@ -33,6 +33,10 @@ class QuotationRequestsController < ApplicationController
 
       quotation_request.vehicle = vehicle
 
+      if quotation_request.status != "draft" && quotation_request.insurance_product_id.blank?
+        render_error("errors.validation_failed", errors: [ "Insurance product must be selected before submission" ], status: :unprocessable_entity) and return
+      end
+
       QuotationRequest.transaction do
         if vehicle.save && quotation_request.save
           render_success(nil, data: quotation_request, status: :created)
@@ -55,7 +59,7 @@ class QuotationRequestsController < ApplicationController
     parsed_payload = raw_payload.is_a?(String) ? JSON.parse(raw_payload) : raw_payload
     ActionController::Parameters.new(parsed_payload).permit(
       :user_id,
-      :insurance_type_id,
+      :insurance_product_id,
       :coverage_type_id,
       :status,
       form_data: {},
