@@ -23,4 +23,7 @@ Rails.application.routes.draw do
   resources :vehicles
   resources :quotation_requests
   resources :users
+
+  resources :insurers
+  resources :insurance_products
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_14_102731) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_10_222752) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -167,6 +167,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_14_102731) do
     t.index ["name"], name: "index_entity_types_on_name", unique: true
   end
 
+  create_table "insurance_products", force: :cascade do |t|
+    t.bigint "insurer_id", null: false
+    t.bigint "coverage_type_id", null: false
+    t.string "name", null: false
+    t.text "description", null: false
+    t.decimal "estimated_price"
+    t.float "customer_rating"
+    t.string "status", default: "active", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["coverage_type_id"], name: "index_insurance_products_on_coverage_type_id"
+    t.index ["insurer_id"], name: "index_insurance_products_on_insurer_id"
+    t.index ["name"], name: "index_insurance_products_on_name", unique: true
+    t.index ["status"], name: "index_insurance_products_on_status"
+  end
+
   create_table "insurance_types", force: :cascade do |t|
     t.string "name"
     t.text "description"
@@ -187,6 +203,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_14_102731) do
     t.index ["entity_type_id"], name: "index_insured_entities_on_entity_type_id"
     t.index ["insurance_type_id"], name: "index_insured_entities_on_insurance_type_id"
     t.index ["user_id"], name: "index_insured_entities_on_user_id"
+  end
+
+  create_table "insurers", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.string "api_endpoint"
+    t.string "api_key"
+    t.string "contact_email"
+    t.string "contact_phone"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_insurers_on_name", unique: true
+    t.index ["user_id"], name: "index_insurers_on_user_id"
   end
 
   create_table "liability_limits", force: :cascade do |t|
@@ -309,6 +339,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_14_102731) do
     t.boolean "verified", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "temporary_password", default: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["fin"], name: "index_users_on_fin", unique: true
     t.index ["phone_number"], name: "index_users_on_phone_number", unique: true
@@ -355,9 +386,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_14_102731) do
   add_foreign_key "entity_attributes", "entity_types"
   add_foreign_key "entity_categories", "categories"
   add_foreign_key "entity_categories", "entity_types"
+  add_foreign_key "insurance_products", "coverage_types"
+  add_foreign_key "insurance_products", "insurers"
   add_foreign_key "insured_entities", "entity_types"
   add_foreign_key "insured_entities", "insurance_types"
   add_foreign_key "insured_entities", "users"
+  add_foreign_key "insurers", "users"
   add_foreign_key "liability_limits", "coverage_types"
   add_foreign_key "liability_limits", "insurance_types"
   add_foreign_key "policies", "coverage_types"

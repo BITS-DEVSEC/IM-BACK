@@ -52,6 +52,9 @@ en:
       user_not_found: "User not found"
       unverified_email: "Please verify your email first"
       unverified_phone: "Please verify your phone first"
+  insurers:
+    errors:
+      profile_already_exists: "You already have an insurer profile."
   errors:
     validation_failed: "Validation failed"
     standard_error: "An error occurred"

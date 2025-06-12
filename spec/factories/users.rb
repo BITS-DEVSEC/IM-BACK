@@ -94,5 +94,19 @@ FactoryBot.define do
       password_confirmation { nil }
       phone_number { nil }
     end
+
+    trait :with_insurer do
+      after(:create) do |user|
+        create(:insurer, user: user)
+      end
+    end
+
+    trait :insurer do
+      after(:create) do |user|
+        role = Role.find_by(name: 'insurer') || create(:role, name: 'insurer')
+        create(:user_role, user: user, role: role)
+        create(:insurer, user: user)
+      end
+    end
   end
 end
