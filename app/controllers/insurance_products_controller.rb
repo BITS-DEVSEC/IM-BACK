@@ -11,8 +11,12 @@ class InsuranceProductsController < ApplicationController
 
   private
 
+  def filter_fields
+    [ :status, :coverage_type_id, :name, :insurer_id ]
+  end
+
   def model_params
     params.require(:payload).permit(:name, :description, :estimated_price,
-                                   :customer_rating, :status, :coverage_type_id)
+                                    :customer_rating, :status, :coverage_type_id)
   end
 end
