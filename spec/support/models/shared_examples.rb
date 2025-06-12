@@ -7,7 +7,8 @@ VALIDATIONS = {
   have_many: "have_many",
   have_and_belong_to_many: "have_and_belong_to_many",
   have_one: "have_one",
-  delegate: "delegate_method"
+  delegate: "delegate_method",
+  optional: "optional"
 }.freeze
 
 CONTENT_TYPE_EXTENSIONS = {
