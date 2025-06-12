@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :quotation_request do
     association :user
-    association :insurance_type
+    association :insurance_product
     association :coverage_type
     association :vehicle
     status { "draft" }

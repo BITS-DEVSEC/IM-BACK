@@ -1,6 +1,7 @@
 class InsuranceProduct < ApplicationRecord
   belongs_to :insurer
   belongs_to :coverage_type
+  has_many :quotation_requests
 
   validates :name, presence: true, uniqueness: true
   validates :description, presence: true

@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe "QuotationRequests", type: :request do
   let(:auth_user) { create(:user) }
-  let(:insurance_type) { create(:insurance_type) }
+  let(:insurance_product) { create(:insurance_product) }
   let(:coverage_type) { create(:coverage_type) }
 
   let(:file) { fixture_file_upload(Rails.root.join('spec/fixtures/files/sample_image.jpg'), 'image/jpeg') }
@@ -10,7 +10,7 @@ RSpec.describe "QuotationRequests", type: :request do
   let(:valid_attributes) do
     {
       user_id: auth_user.id,
-      insurance_type_id: insurance_type.id,
+      insurance_product_id: insurance_product.id,
       coverage_type_id: coverage_type.id,
       status: "draft",
       form_data: {
@@ -32,7 +32,6 @@ RSpec.describe "QuotationRequests", type: :request do
   let(:invalid_attributes) do
     {
       user_id: nil,
-      insurance_type_id: nil,
       coverage_type_id: nil,
       form_data: {}
     }
@@ -77,7 +76,7 @@ RSpec.describe "QuotationRequests", type: :request do
 
   describe 'PUT /update' do
     it 'updates an existing QuotationRequest' do
-      request = create(:quotation_request, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
+      request = create(:quotation_request, user: auth_user, insurance_product: insurance_product, coverage_type: coverage_type)
       update_data = {
         form_data: {
           "insurance_type" => "Updated Insurance",
@@ -101,7 +100,7 @@ RSpec.describe "QuotationRequests", type: :request do
     end
 
     it 'fails to update with invalid data' do
-      request = create(:quotation_request, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
+      request = create(:quotation_request, user: auth_user, insurance_product: insurance_product, coverage_type: coverage_type)
 
       put(
         quotation_request_url(request),
@@ -121,7 +120,7 @@ RSpec.describe "QuotationRequests", type: :request do
 
   describe 'GET /index' do
     it 'returns a list of quotation requests' do
-      create_list(:quotation_request, 3, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
+      create_list(:quotation_request, 3, user: auth_user, insurance_product: insurance_product, coverage_type: coverage_type)
 
       get(
         quotation_requests_url,
@@ -136,7 +135,7 @@ RSpec.describe "QuotationRequests", type: :request do
 
   describe 'GET /show' do
     it 'returns a single quotation request' do
-      request = create(:quotation_request, user: auth_user, insurance_type: insurance_type, coverage_type: coverage_type)
+      request = create(:quotation_request, user: auth_user, insurance_product: insurance_product, coverage_type: coverage_type)
 
       get(
         quotation_request_url(request),
