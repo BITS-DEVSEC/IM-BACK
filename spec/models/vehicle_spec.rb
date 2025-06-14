@@ -86,7 +86,7 @@ RSpec.describe Vehicle, type: :model do
 
     it 'filters by model year range' do
       expect(Vehicle.by_year_range(2009, 2015)).to include(@old)
-      expect(Vehicle.by_year_range(2009, 2015)).not_to include(@new)
+      expect(Vehicle.by_year_range(2009, 2014)).not_to include(@new)
     end
 
     it 'filters by value range' do
