@@ -141,5 +141,40 @@ RSpec.describe "Authentication", type: :request do
         expect(response).to have_http_status(:unauthorized)
       end
     end
+
+    context "with temporary password" do
+      let(:user_with_temp_password) { create(:user, password: "temp_password", password_confirmation: "temp_password", temporary_password: true) }
+      let(:temp_access_token) { user_with_temp_password.generate_access_token }
+
+      it "changes temporary password without requiring current password" do
+        post "/auth/change_password",
+          params: {
+            new_password: "new_password123",
+            new_password_confirmation: "new_password123"
+          },
+          headers: { "Authorization" => "Bearer #{temp_access_token}" }
+
+        expect(response).to have_http_status(:ok)
+        expect(json_response["success"]).to be true
+        expect(json_response["message"]).to eq(I18n.t("auth.success.temporary_password_changed"))
+
+        user_with_temp_password.reload
+        expect(user_with_temp_password.authenticate("new_password123")).to be_truthy
+        expect(user_with_temp_password.temporary_password).to be false
+      end
+
+      it "fails when new passwords don't match for temporary password" do
+        post "/auth/change_password",
+          params: {
+            new_password: "new_password123",
+            new_password_confirmation: "different_password"
+          },
+          headers: { "Authorization" => "Bearer #{temp_access_token}" }
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(json_response["success"]).to be false
+        expect(json_response["error"]).to eq(I18n.t("auth.errors.password_confirmation_mismatch"))
+      end
+    end
   end
 end

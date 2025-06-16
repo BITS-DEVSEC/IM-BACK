@@ -31,6 +31,7 @@ en:
   auth:
     success:
       password_changed: "Password changed successfully. Please login again."
+      temporary_password_changed: "Temporary password changed successfully."
       logged_out: "Successfully logged out"
       logged_out_all: "Successfully logged out from all devices"
       email_verified: "Email verified successfully"

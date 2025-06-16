@@ -30,7 +30,7 @@ RSpec.describe InsurersController, type: :request do
     }
   end
 
-  include_examples 'request_shared_spec', 'insurers', 8
+  include_examples 'request_shared_spec', 'insurers', 9
 
   describe 'PUT /insurers/:id with logo' do
     let(:auth_user) { create(:user, :with_insurer) }
