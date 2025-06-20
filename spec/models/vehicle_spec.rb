@@ -34,7 +34,9 @@ RSpec.describe Vehicle, type: :model do
     { estimated_value: [ :presence, { numericality: { greater_than: 0 } } ] },
     { insured_entity: [ :have_one ] },
     { entity_categories: [ :have_many ] },
-    { entity_attributes: [ :have_many ] }
+    { entity_attributes: [ :have_many ] },
+    { vehicle_type: [ :presence ] },
+    { usage_type: [ :presence ] }
   ] + photo_attributes.map { |photo| { photo => photo_validations } }
   include_examples "model_shared_spec", :vehicle, attributes
 
