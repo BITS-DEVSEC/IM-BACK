@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_11_112137) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_18_105427) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -279,16 +279,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_11_112137) do
   create_table "quotation_requests", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "coverage_type_id", null: false
-    t.bigint "vehicle_id", null: false
     t.string "status", default: "draft", null: false
     t.jsonb "form_data", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "insurance_product_id"
+    t.bigint "insured_entity_id", null: false
     t.index ["coverage_type_id"], name: "index_quotation_requests_on_coverage_type_id"
     t.index ["insurance_product_id"], name: "index_quotation_requests_on_insurance_product_id"
+    t.index ["insured_entity_id"], name: "index_quotation_requests_on_insured_entity_id"
     t.index ["user_id"], name: "index_quotation_requests_on_user_id"
-    t.index ["vehicle_id"], name: "index_quotation_requests_on_vehicle_id"
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
@@ -345,6 +345,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_11_112137) do
     t.index ["phone_number"], name: "index_users_on_phone_number", unique: true
   end
 
+  create_table "vehicle_type_configurations", force: :cascade do |t|
+    t.string "vehicle_type", null: false
+    t.string "usage_type", null: false
+    t.jsonb "expected_fields", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["vehicle_type", "usage_type"], name: "idx_on_vehicle_type_usage_type_6402aedbda", unique: true
+  end
+
   create_table "vehicles", force: :cascade do |t|
     t.string "plate_number"
     t.string "chassis_number"
@@ -355,9 +364,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_11_112137) do
     t.decimal "estimated_value"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "vehicle_type", null: false
+    t.string "usage_type", null: false
+    t.jsonb "additional_fields", default: {}, null: false
     t.index ["chassis_number"], name: "index_vehicles_on_chassis_number", unique: true
     t.index ["engine_number"], name: "index_vehicles_on_engine_number", unique: true
     t.index ["plate_number"], name: "index_vehicles_on_plate_number", unique: true
+    t.index ["usage_type"], name: "index_vehicles_on_usage_type"
+    t.index ["vehicle_type"], name: "index_vehicles_on_vehicle_type"
   end
 
   create_table "verification_tokens", force: :cascade do |t|
@@ -400,8 +414,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_11_112137) do
   add_foreign_key "premium_rates", "insurance_types"
   add_foreign_key "quotation_requests", "coverage_types"
   add_foreign_key "quotation_requests", "insurance_products"
+  add_foreign_key "quotation_requests", "insured_entities"
   add_foreign_key "quotation_requests", "users"
-  add_foreign_key "quotation_requests", "vehicles"
   add_foreign_key "refresh_tokens", "users"
   add_foreign_key "role_permissions", "permissions"
   add_foreign_key "role_permissions", "roles"

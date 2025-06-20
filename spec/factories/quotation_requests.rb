@@ -3,8 +3,8 @@ FactoryBot.define do
     association :user
     association :insurance_product
     association :coverage_type
-    association :vehicle
-    status { "draft" }
+    association :insured_entity
+    status { 'pending' }
     form_data { { example_key: "example_value" } }
   end
 end
