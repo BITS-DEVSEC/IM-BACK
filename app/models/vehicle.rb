@@ -106,4 +106,5 @@ class Vehicle < ApplicationRecord
     if year_of_manufacture.present? && year_of_manufacture < 1950
       errors.add(:year_of_manufacture, "is too old")
     end
-  enend
+  end
+end
