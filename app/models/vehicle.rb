@@ -35,6 +35,20 @@ class Vehicle < ApplicationRecord
   scope :newest_first, -> { order(created_at: :desc) }
   scope :most_valuable_first, -> { order(estimated_value: :desc) }
 
+  def self.permitted_params
+    [
+      :make, :model, :year_of_manufacture, :estimated_value, :plate_number,
+      :chassis_number, :engine_number, :vehicle_type, :usage_type,
+      { additional_fields: {} }
+    ]
+  end
+
+  def self.file_attachments
+    [
+      :front_view_photo, :back_view_photo, :left_view_photo, :right_view_photo,
+      :engine_photo, :chassis_number_photo, :libre_photo
+    ]
+  end
 
   def full_name
     "#{make} #{model} (#{year_of_manufacture})"
@@ -92,5 +106,4 @@ class Vehicle < ApplicationRecord
     if year_of_manufacture.present? && year_of_manufacture < 1950
       errors.add(:year_of_manufacture, "is too old")
     end
-  end
-end
+  enend
