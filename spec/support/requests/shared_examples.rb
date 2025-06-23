@@ -23,7 +23,11 @@ RSpec.shared_examples 'request_shared_spec' do |controller, field_count, exclude
     describe 'GET /index' do
       it 'returns success response' do
         count = clazz.count
-        3.times { create(factory) }
+        if clazz.reflect_on_association(:user)
+          3.times { create(factory, user: auth_user) }
+        else
+          3.times { create(factory) }
+        end
         get(send(:"#{controller}_url"), headers:, as: :json)
         expect(response).to be_successful
         result = JSON(response.body)
