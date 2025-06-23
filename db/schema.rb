@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_18_105427) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_22_180456) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -304,6 +304,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_105427) do
     t.index ["user_id"], name: "index_refresh_tokens_on_user_id"
   end
 
+  create_table "residence_addresses", force: :cascade do |t|
+    t.bigint "customer_id", null: false
+    t.string "region", null: false
+    t.string "subcity", null: false
+    t.string "woreda", null: false
+    t.string "zone", null: false
+    t.string "house_number"
+    t.boolean "is_current", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id", "is_current"], name: "index_residence_addresses_on_customer_id_and_is_current"
+    t.index ["customer_id"], name: "index_residence_addresses_on_customer_id"
+  end
+
   create_table "role_permissions", force: :cascade do |t|
     t.bigint "role_id", null: false
     t.bigint "permission_id", null: false
@@ -417,6 +431,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_18_105427) do
   add_foreign_key "quotation_requests", "insured_entities"
   add_foreign_key "quotation_requests", "users"
   add_foreign_key "refresh_tokens", "users"
+  add_foreign_key "residence_addresses", "customers"
   add_foreign_key "role_permissions", "permissions"
   add_foreign_key "role_permissions", "roles"
   add_foreign_key "user_roles", "roles"
