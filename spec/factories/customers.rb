@@ -8,6 +8,19 @@ FactoryBot.define do
     gender { [ 'Male', 'Female' ].sample }
     region { Faker::Address.state }
     subcity { Faker::Address.city }
-    woreda { Faker::Address.street_name }
+    woreda { Faker::Address.community }
+
+    trait :with_current_address do
+      after(:create) do |customer|
+        create(:residence_address, :current, customer: customer)
+      end
+    end
+
+    trait :with_multiple_addresses do
+      after(:create) do |customer|
+        create_list(:residence_address, 2, customer: customer, is_current: false)
+        create(:residence_address, :current, customer: customer)
+      end
+    end
   end
 end
