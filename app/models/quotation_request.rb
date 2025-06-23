@@ -5,5 +5,4 @@ class QuotationRequest < ApplicationRecord
   belongs_to :insured_entity
 
   validates :status, presence: true
-  validates :form_data, presence: true
 end
