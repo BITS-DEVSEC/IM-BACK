@@ -1,72 +1,51 @@
 class QuotationRequestsController < ApplicationController
   include Common
 
+  ALLOWED_ENTITY_CLASSES = [ Vehicle ].freeze
+
   def create
-    begin
-      raw_payload = params[:payload]
-      parsed_payload = raw_payload.is_a?(String) ? JSON.parse(raw_payload) : raw_payload
-      payload_params = ActionController::Parameters.new(parsed_payload).permit(
-        :user_id,
-        :insurance_product_id,
-        :coverage_type_id,
-        :status,
-        form_data: {},
-        vehicle_attributes: [
-          :plate_number, :chassis_number, :engine_number,
-          :make, :model, :year_of_manufacture, :estimated_value
-        ]
-      )
+    entity_class = find_entity_class(params[:entity_type])
 
-      quotation_request = QuotationRequest.new(payload_params.except(:vehicle_attributes))
+    service = QuotationRequestCreator.new(
+      user: current_user,
+      entity_class: entity_class,
+      entity_params: entity_params,
+      file_params: params.dig(:entity_data, :files),
+      quotation_params: quotation_request_params,
+      residence_address_params: residence_address_params
+    )
 
-      vehicle = Vehicle.new(payload_params[:vehicle_attributes])
-
-      if params[:vehicle_attributes].present?
-        vehicle.front_view_photo.attach(params[:vehicle_attributes]["front_view_photo"]) if params[:vehicle_attributes]["front_view_photo"].present?
-        vehicle.back_view_photo.attach(params[:vehicle_attributes]["back_view_photo"]) if params[:vehicle_attributes]["back_view_photo"].present?
-        vehicle.left_view_photo.attach(params[:vehicle_attributes]["left_view_photo"]) if params[:vehicle_attributes]["left_view_photo"].present?
-        vehicle.right_view_photo.attach(params[:vehicle_attributes]["right_view_photo"]) if params[:vehicle_attributes]["right_view_photo"].present?
-        vehicle.engine_photo.attach(params[:vehicle_attributes]["engine_photo"]) if params[:vehicle_attributes]["engine_photo"].present?
-        vehicle.chassis_number_photo.attach(params[:vehicle_attributes]["chassis_number_photo"]) if params[:vehicle_attributes]["chassis_number_photo"].present?
-        vehicle.libre_photo.attach(params[:vehicle_attributes]["libre_photo"]) if params[:vehicle_attributes]["libre_photo"].present?
-      end
-
-      quotation_request.vehicle = vehicle
-
-      if quotation_request.status != "draft" && quotation_request.insurance_product_id.blank?
-        render_error("errors.validation_failed", errors: [ "Insurance product must be selected before submission" ], status: :unprocessable_entity) and return
-      end
-
-      QuotationRequest.transaction do
-        if vehicle.save && quotation_request.save
-          render_success(nil, data: quotation_request, status: :created)
-        else
-          errors = vehicle.errors.full_messages + quotation_request.errors.full_messages
-          render_error("errors.validation_failed", errors: errors, status: :unprocessable_entity)
-        end
-      end
-    rescue JSON::ParserError => e
-      render_error("errors.invalid_payload", error: "Invalid JSON payload: #{e.message}", status: :bad_request)
-    rescue StandardError => e
-      render_error("errors.standard_error", error: e.message, status: :internal_server_error)
+    if (quotation_request = service.call)
+      render_success(nil, data: quotation_request, status: :created)
+    else
+      render_error("errors.validation_failed", errors: service.errors.join(", "), status: :unprocessable_entity)
     end
+  rescue StandardError => e
+    render_error("errors.standard_error", error: e.message)
   end
 
   private
 
-  def model_params
-    raw_payload = params[:payload]
-    parsed_payload = raw_payload.is_a?(String) ? JSON.parse(raw_payload) : raw_payload
-    ActionController::Parameters.new(parsed_payload).permit(
-      :user_id,
-      :insurance_product_id,
-      :coverage_type_id,
-      :status,
-      form_data: {},
-      vehicle_attributes: [
-        :plate_number, :chassis_number, :engine_number,
-        :make, :model, :year_of_manufacture, :estimated_value
-      ]
+  def find_entity_class(type_name)
+    klass = type_name.safe_constantize
+    raise "Unknown entity type: #{type_name}" unless klass.in?(ALLOWED_ENTITY_CLASSES)
+    klass
+  end
+
+  def entity_params
+    entity_class = find_entity_class(params[:entity_type])
+    params.require(:entity_data).permit(*entity_class.permitted_params)
+  end
+
+  def quotation_request_params
+    params.permit(:coverage_type_id, :insurance_product_id, form_data: {})
+  end
+
+  def residence_address_params
+    return nil unless params[:residence_address].present?
+
+    params.require(:residence_address).permit(
+      :region, :subcity, :woreda, :zone, :house_number
     )
   end
 end

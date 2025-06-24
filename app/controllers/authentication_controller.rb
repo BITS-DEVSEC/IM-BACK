@@ -244,11 +244,12 @@ class AuthenticationController < ApplicationController
   end
 
   def change_password
-    if current_user.authenticate(params[:current_password])
+    if current_user.temporary_password
       if params[:new_password] == params[:new_password_confirmation]
-        if current_user.update(password: params[:new_password], password_confirmation: params[:new_password_confirmation])
-          current_user.refresh_tokens.destroy_all
-          render_success("auth.success.password_changed")
+        if current_user.update(password: params[:new_password],
+                              password_confirmation: params[:new_password_confirmation],
+                              temporary_password: false)
+          render_success("auth.success.temporary_password_changed")
         else
           render_error("errors.validation_failed", errors: current_user.errors.full_messages)
         end
@@ -256,7 +257,20 @@ class AuthenticationController < ApplicationController
         render_error("auth.errors.password_confirmation_mismatch")
       end
     else
-      render_error("auth.errors.invalid_current_password", status: :unauthorized)
+      if current_user.authenticate(params[:current_password])
+        if params[:new_password] == params[:new_password_confirmation]
+          if current_user.update(password: params[:new_password], password_confirmation: params[:new_password_confirmation])
+            current_user.refresh_tokens.destroy_all
+            render_success("auth.success.password_changed")
+          else
+            render_error("errors.validation_failed", errors: current_user.errors.full_messages)
+          end
+        else
+          render_error("auth.errors.password_confirmation_mismatch")
+        end
+      else
+        render_error("auth.errors.invalid_current_password", status: :unauthorized)
+      end
     end
   end
 

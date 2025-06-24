@@ -12,6 +12,8 @@ RSpec.describe "Vehicles API", type: :request do
       plate_number: "ABC123",
       chassis_number: "CHASSIS123456",
       engine_number: "ENGINE123456",
+      vehicle_type: 'Private Vehicle',
+      usage_type: 'Private Own Use',
       front_view_photo: fixture_file_upload(Rails.root.join("spec/fixtures/files/sample_image.jpg"), "image/jpeg")
     }
   end

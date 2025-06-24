@@ -2,7 +2,6 @@ class Vehicle < ApplicationRecord
   has_one :insured_entity, as: :entity
   has_many :entity_categories, as: :entity
   has_many :entity_attributes, as: :entity
-  has_many :quotation_requests
 
   has_one_attached :front_view_photo
   has_one_attached :back_view_photo
@@ -23,6 +22,8 @@ class Vehicle < ApplicationRecord
   validates :make, presence: true
   validates :model, presence: true
   validates :estimated_value, presence: true, numericality: { greater_than: 0 }
+  validates :vehicle_type, presence: true
+  validates :usage_type, presence: true
 
   validate :year_not_in_future
   validate :year_not_too_old
@@ -33,6 +34,21 @@ class Vehicle < ApplicationRecord
   scope :by_value_range, ->(min_value, max_value) { where(estimated_value: min_value..max_value) }
   scope :newest_first, -> { order(created_at: :desc) }
   scope :most_valuable_first, -> { order(estimated_value: :desc) }
+
+  def self.permitted_params
+    [
+      :make, :model, :year_of_manufacture, :estimated_value, :plate_number,
+      :chassis_number, :engine_number, :vehicle_type, :usage_type,
+      { additional_fields: {} }
+    ]
+  end
+
+  def self.file_attachments
+    [
+      :front_view_photo, :back_view_photo, :left_view_photo, :right_view_photo,
+      :engine_photo, :chassis_number_photo, :libre_photo
+    ]
+  end
 
   def full_name
     "#{make} #{model} (#{year_of_manufacture})"

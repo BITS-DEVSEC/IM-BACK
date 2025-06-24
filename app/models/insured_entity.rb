@@ -4,6 +4,7 @@ class InsuredEntity < ApplicationRecord
   belongs_to :entity_type
   belongs_to :entity, polymorphic: true
   has_many :policies, dependent: :destroy
+  has_many :quotation_requests
 
   validates :entity_id, uniqueness: { scope: [ :entity_type_id, :user_id ] }
   validate :entity_type_matches_entity

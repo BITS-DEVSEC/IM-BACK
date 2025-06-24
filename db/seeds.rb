@@ -144,6 +144,9 @@ vehicle = Vehicle.find_or_create_by!(plate_number: 'A12345') do |v|
   v.make = 'Toyota'
   v.model = 'Corolla'
   v.estimated_value = 1_500_000.00
+  v.vehicle_type = 'Private Vehicle'
+  v.usage_type = 'Private Own Use'
+  v.additional_fields = {}
 end
 
 customer_user = User.find_by!(email: 'customer@example.com')

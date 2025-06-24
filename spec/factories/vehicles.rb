@@ -7,6 +7,9 @@ FactoryBot.define do
     make { [ 'Toyota', 'Honda', 'Ford', 'BMW' ].sample }
     model { [ 'Corolla', 'Civic', 'Focus', '3 Series' ].sample }
     estimated_value { rand(500_000..2_000_000.0).round(2) }
+    vehicle_type { 'Private Vehicle' }
+    usage_type { 'Private Own Use' }
+    additional_fields { {} }
 
     created_at { Time.now }
     updated_at { Time.now }
