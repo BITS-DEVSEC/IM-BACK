@@ -28,10 +28,10 @@ class QuotationRequestsController < ApplicationController
 
   def eager_load_associations
     [
-      { user: [:customer, :roles] },
+      { user: [ :customer, :roles ] },
       { insurance_product: { coverage_type: :insurance_type } },
       { coverage_type: :insurance_type },
-      { insured_entity: [:entity, :insurance_type] }
+      { insured_entity: [ :entity, :insurance_type ] }
     ]
   end
 
@@ -39,16 +39,16 @@ class QuotationRequestsController < ApplicationController
     {
       default: [
         :user,
-        'user.customer',
-        'user.customer.current_address',
+        "user.customer",
+        "user.customer.current_address",
         :insurance_product,
-        'insurance_product.coverage_type',
-        'insurance_product.coverage_type.insurance_type',
+        "insurance_product.coverage_type",
+        "insurance_product.coverage_type.insurance_type",
         :coverage_type,
-        'coverage_type.insurance_type',
+        "coverage_type.insurance_type",
         :insured_entity,
-        'insured_entity.entity',
-        'insured_entity.insurance_type'
+        "insured_entity.entity",
+        "insured_entity.insurance_type"
       ]
     }
   end
