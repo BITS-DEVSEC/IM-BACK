@@ -26,6 +26,33 @@ class QuotationRequestsController < ApplicationController
 
   private
 
+  def eager_load_associations
+    [
+      { user: [ :customer, :roles ] },
+      { insurance_product: { coverage_type: :insurance_type } },
+      { coverage_type: :insurance_type },
+      { insured_entity: [ :entity, :insurance_type ] }
+    ]
+  end
+
+  def serializer_includes
+    {
+      default: [
+        :user,
+        "user.customer",
+        "user.customer.current_address",
+        :insurance_product,
+        "insurance_product.coverage_type",
+        "insurance_product.coverage_type.insurance_type",
+        :coverage_type,
+        "coverage_type.insurance_type",
+        :insured_entity,
+        "insured_entity.entity",
+        "insured_entity.insurance_type"
+      ]
+    }
+  end
+
   def find_entity_class(type_name)
     klass = type_name.safe_constantize
     raise "Unknown entity type: #{type_name}" unless klass.in?(ALLOWED_ENTITY_CLASSES)

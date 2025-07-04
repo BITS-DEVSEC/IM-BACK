@@ -1,41 +1,74 @@
 class QuotationRequestSerializer < ActiveModel::Serializer
-  attributes :id, :status, :form_data, :created_at, :updated_at, :insured_entity_data
+  attributes :id, :status, :form_data, :created_at, :updated_at
 
-  belongs_to :user
-  belongs_to :insurance_product
-  belongs_to :coverage_type
-  belongs_to :insured_entity
+  belongs_to :user, serializer: UserSerializer
+  belongs_to :insurance_product, serializer: InsuranceProductSerializer
+  belongs_to :coverage_type, serializer: CoverageTypeSerializer
+  belongs_to :insured_entity, serializer: InsuredEntitySerializer
 
-  def insurance_product
-    object.insurance_product.as_json(include: :insurer) if object.insurance_product
+  def attributes(*args)
+    super.merge(request_summary: request_summary)
   end
 
-  def coverage_type
-    object.coverage_type.as_json(include: :insurance_type) if object.coverage_type
+  private
+
+  def request_summary
+    {
+      request_type: "#{object.coverage_type&.insurance_type&.name} - #{object.coverage_type&.name}",
+      entity_summary: entity_summary,
+      user_risk_profile: user_risk_profile,
+      estimated_value: estimated_entity_value,
+      request_age_days: (Date.current - object.created_at.to_date).to_i,
+      completeness_score: calculate_completeness_score
+    }
   end
 
-  def user
-    if object.user
-      user_data = object.user.as_json
-      user_data["customer"] = object.user.customer.as_json if object.user.customer
-      user_data
+  def entity_summary
+    entity = object.insured_entity&.entity
+    return "No entity" unless entity
+
+    case entity
+    when Vehicle
+      "#{entity.year_of_manufacture} #{entity.make} #{entity.model} (#{entity.plate_number})"
+    else
+      "#{entity.class.name} ##{entity.id}"
     end
   end
 
-  # This method will include the polymorphic entity's attributes
-  def insured_entity_data
+  def user_risk_profile
+    return {} unless object.user
+
+    user = object.user
+    {
+      account_age_days: (Date.current - user.created_at.to_date).to_i,
+      verified_status: user.verified,
+      total_entities: user.insured_entities.count,
+      total_policies: user.policies.count,
+      total_quotation_requests: user.quotation_requests.count,
+      has_active_policies: user.policies.where(status: "active").exists?
+    }
+  end
+
+  def estimated_entity_value
     entity = object.insured_entity&.entity
     return nil unless entity
 
-    # Convention: Vehicle model maps to VehicleSerializer
-    serializer_class_name = "#{entity.class.name}Serializer"
+    entity.respond_to?(:estimated_value) ? entity.estimated_value : nil
+  end
 
-    begin
-      serializer_class = serializer_class_name.constantize
-      serializer_class.new(entity, scope: scope, root: false).as_json
-    rescue NameError
-      # Fallback if a specific serializer doesn't exist
-      entity.as_json
-    end
+  def calculate_completeness_score
+    score = 0
+    total_checks = 8
+
+    score += 1 if object.user&.verified
+    score += 1 if object.user&.customer&.current_address.present?
+    score += 1 if object.form_data.present?
+    score += 1 if object.insured_entity&.entity.present?
+    score += 1 if object.coverage_type.present?
+    score += 1 if estimated_entity_value.present?
+    score += 1 if object.user&.customer&.birthdate.present?
+    score += 1 if object.status != "draft"
+
+    ((score.to_f / total_checks) * 100).round(1)
   end
 end
