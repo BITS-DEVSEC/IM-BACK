@@ -2,7 +2,7 @@ FactoryBot.define do
   factory :insured_entity do
     association :user
     association :insurance_type
-    association :entity_type, factory: [ :entity_type, :vehicle ]
+    association :entity_type
     association :entity, factory: :vehicle
 
     after(:build) do |insured_entity|
