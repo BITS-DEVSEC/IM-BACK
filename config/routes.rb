@@ -25,6 +25,7 @@ Rails.application.routes.draw do
     post :convert_to_policy, on: :member
   end
   resources :users
+  resources :policies
 
   resources :insurers
   resources :insurance_products
