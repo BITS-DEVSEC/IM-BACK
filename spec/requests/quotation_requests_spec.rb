@@ -198,4 +198,27 @@ RSpec.describe QuotationRequestsController, type: :request do
       end
     end
   end
+  describe 'POST /convert_to_policy' do
+    let(:auth_user) { create(:user, :with_customer) }
+    let(:quotation_request) { create(:quotation_request, user: auth_user) }
+    let(:token) { auth_user.generate_access_token }
+    let(:headers) { { 'Authorization' => "Bearer #{token}" } }
+
+    before do
+      role = create(:role, name: 'test')
+      auth_user.roles << role
+      permission = create(:permission, action: 'convert_to_policy', resource: 'quotation_requests')
+      role.permissions << permission
+    end
+
+    it 'converts a quotation request to a policy' do
+      post convert_to_policy_quotation_request_url(quotation_request), headers: headers, as: :json
+      expect(response).to have_http_status(:created)
+      result = JSON(response.body)
+      expect(result['success']).to be_truthy
+      expect(result['data']['policy_number']).to be_present
+      expect(Policy.count).to eq(1)
+      expect(quotation_request.reload.status).to eq('converted')
+    end
+  end
 end
