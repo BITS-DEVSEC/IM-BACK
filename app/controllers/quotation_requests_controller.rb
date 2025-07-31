@@ -24,6 +24,30 @@ class QuotationRequestsController < ApplicationController
     render_error("errors.standard_error", error: e.message)
   end
 
+  def convert_to_policy
+    quotation_request = QuotationRequest.find(params[:id])
+    policy = Policy.new(
+      user_id: quotation_request.user_id,
+      insured_entity_id: quotation_request.insured_entity_id,
+      coverage_type_id: quotation_request.coverage_type_id,
+      policy_number: "POL-#{SecureRandom.hex(8)}",
+      start_date: Date.today,
+      end_date: Date.today + 1.year,
+      # This could be calculated
+      premium_amount: quotation_request.insurance_product&.estimated_price,
+      status: "pending"
+    )
+
+    if policy.save
+      quotation_request.update(status: "converted")
+      render_success(nil, data: policy, status: :created)
+    else
+      render_error("errors.validation_failed", errors: policy.errors.full_messages, status: :unprocessable_entity)
+    end
+  rescue StandardError => e
+    render_error("errors.standard_error", error: e.message)
+  end
+
   private
 
   def eager_load_associations
