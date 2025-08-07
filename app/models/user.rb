@@ -7,6 +7,7 @@ class User < ApplicationRecord
   has_many :insured_entities
   has_many :policies
   has_many :quotation_requests
+  has_many :claim_timelines, dependent: :destroy
 
   validates :email, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }, allow_nil: true
   validates :password_digest, presence: true, if: -> { email.present? }
@@ -57,5 +58,11 @@ class User < ApplicationRecord
       subcity: subcity,
       woreda: woreda
     )
+  end
+
+  def full_name
+    return nil unless customer
+    names = [ customer.first_name, customer.middle_name, customer.last_name ].compact
+    names.empty? ? nil : names.join(" ")
   end
 end
