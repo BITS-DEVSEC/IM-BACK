@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_22_180456) do
+ActiveRecord::Schema[8.0].define(version: 2025_08_01_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -95,6 +95,64 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_22_180456) do
     t.index ["name"], name: "index_category_groups_on_name"
   end
 
+  create_table "claim_documents", force: :cascade do |t|
+    t.bigint "claim_id", null: false
+    t.bigint "uploaded_by_id", null: false
+    t.string "document_type", null: false
+    t.string "status", default: "pending", null: false
+    t.string "original_filename", null: false
+    t.bigint "file_size", null: false
+    t.string "content_type", null: false
+    t.json "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["claim_id", "document_type"], name: "index_claim_documents_on_claim_id_and_document_type"
+    t.index ["claim_id", "status"], name: "index_claim_documents_on_claim_id_and_status"
+    t.index ["claim_id"], name: "index_claim_documents_on_claim_id"
+    t.index ["document_type"], name: "index_claim_documents_on_document_type"
+    t.index ["status"], name: "index_claim_documents_on_status"
+    t.index ["uploaded_by_id"], name: "index_claim_documents_on_uploaded_by_id"
+  end
+
+  create_table "claim_drivers", force: :cascade do |t|
+    t.bigint "claim_id", null: false
+    t.string "name"
+    t.string "phone"
+    t.string "license_number"
+    t.integer "age"
+    t.string "occupation"
+    t.text "address"
+    t.string "city"
+    t.string "subcity"
+    t.string "kebele"
+    t.string "house_number"
+    t.string "license_issuing_region"
+    t.date "license_issue_date"
+    t.date "license_expiry_date"
+    t.string "license_grade"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["claim_id"], name: "index_claim_drivers_on_claim_id"
+    t.index ["license_number"], name: "index_claim_drivers_on_license_number"
+    t.index ["phone"], name: "index_claim_drivers_on_phone"
+  end
+
+  create_table "claim_timelines", force: :cascade do |t|
+    t.bigint "claim_id", null: false
+    t.bigint "user_id"
+    t.string "event_type", null: false
+    t.text "description"
+    t.datetime "occurred_at", null: false
+    t.json "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["claim_id", "occurred_at"], name: "index_claim_timelines_on_claim_id_and_occurred_at"
+    t.index ["claim_id"], name: "index_claim_timelines_on_claim_id"
+    t.index ["event_type"], name: "index_claim_timelines_on_event_type"
+    t.index ["occurred_at"], name: "index_claim_timelines_on_occurred_at"
+    t.index ["user_id"], name: "index_claim_timelines_on_user_id"
+  end
+
   create_table "claims", force: :cascade do |t|
     t.bigint "policy_id", null: false
     t.string "claim_number"
@@ -104,10 +162,26 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_22_180456) do
     t.string "status"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "incident_location"
+    t.time "incident_time"
+    t.string "incident_type"
+    t.text "damage_description"
+    t.string "vehicle_speed"
+    t.string "distance_from_roadside"
+    t.boolean "horn_sounded", default: false
+    t.boolean "inside_vehicle", default: false
+    t.boolean "police_notified", default: false
+    t.boolean "third_party_involved", default: false
+    t.decimal "settlement_amount", precision: 10, scale: 2
+    t.datetime "submitted_at"
+    t.text "additional_details"
     t.index ["claim_number"], name: "index_claims_on_claim_number", unique: true
     t.index ["incident_date"], name: "index_claims_on_incident_date"
+    t.index ["incident_type"], name: "index_claims_on_incident_type"
     t.index ["policy_id"], name: "index_claims_on_policy_id"
+    t.index ["settlement_amount"], name: "index_claims_on_settlement_amount"
     t.index ["status"], name: "index_claims_on_status"
+    t.index ["submitted_at"], name: "index_claims_on_submitted_at"
   end
 
   create_table "coverage_types", force: :cascade do |t|
@@ -407,6 +481,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_22_180456) do
   add_foreign_key "category_attributes", "attribute_definitions"
   add_foreign_key "category_attributes", "categories"
   add_foreign_key "category_groups", "insurance_types"
+  add_foreign_key "claim_documents", "claims"
+  add_foreign_key "claim_documents", "users", column: "uploaded_by_id"
+  add_foreign_key "claim_drivers", "claims"
+  add_foreign_key "claim_timelines", "claims"
+  add_foreign_key "claim_timelines", "users"
   add_foreign_key "claims", "policies"
   add_foreign_key "coverage_types", "insurance_types"
   add_foreign_key "customers", "users"
