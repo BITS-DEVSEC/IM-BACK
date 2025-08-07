@@ -25,7 +25,24 @@ Rails.application.routes.draw do
     post :convert_to_policy, on: :member
   end
   resources :users
-  resources :policies
+  resources :policies do
+    resources :claims, shallow: true
+  end
+
+  resources :claims do
+    collection do
+      get :dashboard
+      patch :bulk_update_status
+    end
+    member do
+      patch :update_status
+      patch :submit
+      post :upload_documents
+      get :documents
+      get :workflow
+      delete "documents/:document_id", action: :remove_document, as: :remove_document
+    end
+  end
 
   resources :insurers
   resources :insurance_products

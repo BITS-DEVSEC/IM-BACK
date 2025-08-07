@@ -34,14 +34,22 @@ permissions = [
   { name: 'create_users', resource: 'users', action: 'create' },
   { name: 'update_users', resource: 'users', action: 'update' },
   { name: 'delete_users', resource: 'users', action: 'delete' },
-  { name: 'manage_users', resource: 'users', action: 'manage' }
+  { name: 'manage_users', resource: 'users', action: 'manage' },
+  # Claims permissions
+  { name: 'read_claims', resource: 'claims', action: 'read' },
+  { name: 'create_claims', resource: 'claims', action: 'create' },
+  { name: 'update_claims', resource: 'claims', action: 'update' },
+  { name: 'delete_claims', resource: 'claims', action: 'delete' },
+  { name: 'process_claims', resource: 'claims', action: 'process' }
 ]
 
 insurer_permissions = [
   { name: 'manage_products', resource: 'insurance_products', action: 'manage' },
   { name: 'view_customers', resource: 'customers', action: 'read' },
   { name: 'view_policies', resource: 'policies', action: 'read' },
-  { name: 'view_claims', resource: 'claims', action: 'read' }
+  { name: 'view_claims', resource: 'claims', action: 'read' },
+  { name: 'process_claims', resource: 'claims', action: 'process' },
+  { name: 'update_claim_status', resource: 'claims', action: 'update_status' }
 ]
 
 permissions.each { |perm| Permission.find_or_create_by!(perm) }
@@ -61,13 +69,22 @@ Permission.where(name: %w[read_policies create_policies]).each do |p|
   RolePermission.find_or_create_by!(role: agent, permission: p)
 end
 
+# Customer permissions - can read policies and manage their own claims
 RolePermission.find_or_create_by!(role: customer, permission: Permission.find_by!(name: 'read_policies'))
+Permission.where(name: %w[read_claims create_claims update_claims]).each do |p|
+  RolePermission.find_or_create_by!(role: customer, permission: p)
+end
 
 Permission.where(name: %w[read_policies create_policies update_policies]).each do |p|
   RolePermission.find_or_create_by!(role: manager, permission: p)
 end
 
 Permission.where(resource: 'users', action: %w[read update]).each do |p|
+  RolePermission.find_or_create_by!(role: manager, permission: p)
+end
+
+# Manager can also view and process claims
+Permission.where(name: %w[read_claims process_claims]).each do |p|
   RolePermission.find_or_create_by!(role: manager, permission: p)
 end
 
@@ -162,16 +179,199 @@ insured_entity = InsuredEntity.create!(
 puts "Creating a sample policy..."
 third_party = CoverageType.find_by!(name: 'Third Party', insurance_type: insurance_type_records['Motor'])
 
-Policy.create!(
+policy = Policy.create!(
   user: customer_user,
   insured_entity: insured_entity,
   coverage_type: third_party,
   policy_number: "POL-#{Time.current.to_i}",
-  start_date: Date.current,
-  end_date: Date.current + 1.year,
+  start_date: Date.current - 6.months,
+  end_date: Date.current + 6.months,
   premium_amount: 2641.00,
   status: 'active'
 )
+
+# Sample Claims
+puts "Creating sample claims..."
+
+# Claim 1: Recent collision (approved)
+claim1 = Claim.create!(
+  policy: policy,
+  claim_number: "CL-2024-0042",
+  description: "Minor collision with another vehicle at an intersection. Front bumper damaged.",
+  claimed_amount: 15000.0,
+  settlement_amount: nil,
+  incident_date: Date.current - 30.days,
+  incident_time: '14:30',
+  incident_location: "Bole Road, Addis Ababa",
+  incident_type: "collision",
+  damage_description: "Minor collision with another vehicle at an intersection. Front bumper damaged.",
+  vehicle_speed: "40 km/h",
+  distance_from_roadside: "2 meters",
+  horn_sounded: false,
+  inside_vehicle: false,
+  police_notified: false,
+  third_party_involved: false,
+  status: "approved",
+  submitted_at: Date.current - 25.days,
+  additional_details: "Intersection collision with minor damage"
+)
+
+# Create driver info for claim 1
+ClaimDriver.create!(
+  claim: claim1,
+  name: "Samuel Asmare Zerif",
+  phone: "0916350638",
+  license_number: "DL123456789",
+  age: 32,
+  city: "Addis Ababa",
+  subcity: "Kirkos",
+  kebele: "12",
+  house_number: "1234",
+  license_grade: "Grade 3",
+  license_issuing_region: "Addis Ababa",
+  license_issue_date: Date.current - 5.years,
+  license_expiry_date: Date.current + 3.years,
+  occupation: "Software Engineer"
+)
+
+# Create timeline entries for claim 1
+ClaimTimeline.create!(
+  claim: claim1,
+  event_type: "created",
+  user: customer_user,
+  occurred_at: Date.current - 30.days,
+  description: "Claim created"
+)
+
+ClaimTimeline.create!(
+  claim: claim1,
+  event_type: "submitted",
+  user: customer_user,
+  occurred_at: Date.current - 25.days,
+  description: "Claim submitted for review"
+)
+
+ClaimTimeline.create!(
+  claim: claim1,
+  event_type: "status_changed",
+  user: User.find_by!(email: 'admin@example.com'),
+  occurred_at: Date.current - 20.days,
+  description: "Status changed to approved"
+)
+
+# Claim 2: Completed claim
+claim2 = Claim.create!(
+  policy: policy,
+  claim_number: "CL-2024-0028",
+  description: "Toyota Corolla - Bumper Repair. Vehicle damage from parking lot incident.",
+  claimed_amount: 12500.0,
+  settlement_amount: 12500.0,
+  incident_date: Date.current - 90.days,
+  incident_time: '09:15',
+  incident_location: "Shopping mall parking lot",
+  incident_type: "collision",
+  damage_description: "Rear bumper damage from backing into a pole",
+  vehicle_speed: "5 km/h",
+  police_notified: false,
+  third_party_involved: false,
+  status: "paid",
+  submitted_at: Date.current - 85.days,
+  additional_details: "Parking lot surveillance footage available"
+)
+
+# Create driver info for claim 2
+ClaimDriver.create!(
+  claim: claim2,
+  name: "Samuel Asmare Zerif",
+  phone: "0916350638",
+  license_number: "DL123456789",
+  age: 32,
+  city: "Addis Ababa",
+  subcity: "Kirkos",
+  kebele: "12",
+  house_number: "1234",
+  license_grade: "Grade 3",
+  license_issuing_region: "Addis Ababa",
+  license_issue_date: Date.current - 5.years,
+  license_expiry_date: Date.current + 3.years,
+  occupation: "Software Engineer"
+)
+
+# Create timeline entries for claim 2
+ClaimTimeline.create!(
+  claim: claim2,
+  event_type: "created",
+  user: customer_user,
+  occurred_at: Date.current - 90.days,
+  description: "Claim created"
+)
+
+ClaimTimeline.create!(
+  claim: claim2,
+  event_type: "submitted",
+  user: customer_user,
+  occurred_at: Date.current - 85.days,
+  description: "Claim submitted for review"
+)
+
+ClaimTimeline.create!(
+  claim: claim2,
+  event_type: "status_changed",
+  user: User.find_by!(email: 'admin@example.com'),
+  occurred_at: Date.current - 80.days,
+  description: "Status changed to approved"
+)
+
+ClaimTimeline.create!(
+  claim: claim2,
+  event_type: "status_changed",
+  user: User.find_by!(email: 'admin@example.com'),
+  occurred_at: Date.current - 75.days,
+  description: "Status changed to paid",
+  metadata: { settlement_amount: 12500.0 }
+)
+
+# Claim 3: Draft claim
+claim3 = Claim.create!(
+  policy: policy,
+  claim_number: "CL-2024-0055",
+  description: "Draft claim for windshield replacement",
+  claimed_amount: 3500.0,
+  incident_date: Date.current - 5.days,
+  incident_type: "other",
+  damage_description: "Windshield cracked due to debris from construction site",
+  status: "draft",
+  additional_details: "Windshield replacement needed"
+)
+
+# Create driver info for claim 3
+ClaimDriver.create!(
+  claim: claim3,
+  name: "Samuel Asmare Zerif",
+  phone: "0916350638",
+  license_number: "DL123456789",
+  age: 32,
+  city: "Addis Ababa",
+  subcity: "Kirkos",
+  kebele: "12",
+  house_number: "1234",
+  license_grade: "Grade 3",
+  license_issuing_region: "Addis Ababa",
+  license_issue_date: Date.current - 5.years,
+  license_expiry_date: Date.current + 3.years,
+  occupation: "Software Engineer"
+)
+
+# Create timeline entry for claim 3
+ClaimTimeline.create!(
+  claim: claim3,
+  event_type: "created",
+  user: customer_user,
+  occurred_at: Date.current - 5.days,
+  description: "Draft claim created"
+)
+
+puts "Sample claims created successfully!"
 
 # Category Groups and Categories
 puts "Seeding category groups and categories..."
