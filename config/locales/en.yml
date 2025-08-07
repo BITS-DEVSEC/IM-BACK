@@ -56,6 +56,21 @@ en:
   insurers:
     errors:
       profile_already_exists: "You already have an insurer profile."
+  claims:
+    errors:
+      policy_required: "A valid policy is required to create a claim."
+      policy_not_owned: "You can only create claims for your own policies."
+      cannot_update_claim: "This claim cannot be updated by the user."
+      cannot_submit_claim: "This claim cannot be submitted."
+      cannot_delete_submitted_claim: "Submitted claims cannot be deleted."
+      insufficient_privileges: "You don't have sufficient privileges to perform this action."
+    status_updated_successfully: "Claim status updated successfully."
+    submitted_successfully: "Claim submitted successfully."
+    deleted_successfully: "Claim deleted successfully."
+    bulk_update_completed: "Bulk status update completed."
+    documents:
+      uploaded_successfully: "Documents uploaded successfully."
+      removed_successfully: "Document removed successfully."
   errors:
     validation_failed: "Validation failed"
     standard_error: "An error occurred"
